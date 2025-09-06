@@ -13,11 +13,14 @@ WORKDIR /app
 RUN mkdir -p /app/data /app/public/uploads && \
     chown -R node:node /app
 
-# Copy entire backend directory
-COPY backend/ ./
+# Copy package files first
+COPY backend/package*.json ./
 
 # Install dependencies
 RUN npm install
+
+# Copy rest of backend source
+COPY backend/ ./
 
 # Build application
 RUN npm run build && \
