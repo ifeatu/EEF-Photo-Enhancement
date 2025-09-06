@@ -1,11 +1,15 @@
 services:
   - type: web
-    name: photo-enhancement-backend
-    env: docker
-    dockerfilePath: ./backend/Dockerfile.render
-    dockerContext: ./backend
-    plan: starter
+    name: photoenhance-backend
+    runtime: docker
+    repo: https://github.com/ifeatu/EEF-Photo-Enhancement.git
+    branch: main
+    rootDir: backend
+    dockerfilePath: ../Dockerfile.backend
     region: oregon
+    plan: starter
+    buildCommand: ""
+    startCommand: ""
     envVars:
       - key: NODE_ENV
         value: production
@@ -30,18 +34,20 @@ services:
     disk:
       name: backend-data
       mountPath: /app/data
-      sizeGB: 1
+      sizeGB: "1"
     
-  - type: static
+  - type: web
     name: photo-enhancement-frontend
+    runtime: static
+    repo: https://github.com/ifeatu/EEF-Photo-Enhancement.git
+    branch: main
+    rootDir: frontend
     buildCommand: npm run build
-    publishPath: ./frontend/dist
-    pullRequestPreviewsEnabled: false
-    buildFilter:
-      paths:
-      - frontend/**
+    publishPath: ./dist
+    region: oregon
+    plan: starter
     envVars:
       - key: VITE_NODE_ENV
         value: production
       - key: VITE_SECURE_COOKIES
-        value: true
+        value: "true"
