@@ -1,0 +1,17 @@
+steps:
+  # Simple backend build and deploy
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy' 
+      - 'photo-enhancement-backend'
+      - '--source=./backend'
+      - '--region=us-central1'
+      - '--allow-unauthenticated'
+      - '--port=1337'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--max-instances=5'
+      - '--set-env-vars=NODE_ENV=production,HOST=0.0.0.0,PORT=1337,DATABASE_CLIENT=sqlite,DATABASE_FILENAME=.tmp/data.db'
+
+timeout: 1200s

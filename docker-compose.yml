@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5992:5992"
+    env_file:
+      - ./backend/.env.local
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    networks:
+      - photoenhance-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8240:8240"
+    env_file:
+      - ./frontend/.env.local
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    networks:
+      - photoenhance-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  photoenhance-network:
+    driver: bridge
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:

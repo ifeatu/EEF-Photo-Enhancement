@@ -1,0 +1,95 @@
+# Google Cloud Build configuration for photo enhancement app
+steps:
+  # Build backend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/backend:$BUILD_ID'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/backend:latest'
+      - './backend'
+    id: 'build-backend'
+
+  # Build frontend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/frontend:$BUILD_ID'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/frontend:latest'
+      - './frontend'
+    id: 'build-frontend'
+
+  # Push backend image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/backend:$BUILD_ID'
+    id: 'push-backend'
+    waitFor: ['build-backend']
+
+  # Push frontend image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/frontend:$BUILD_ID'
+    id: 'push-frontend'
+    waitFor: ['build-frontend']
+
+  # Deploy backend to Cloud Run with environment variables
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy-backend'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'photo-enhancement-backend'
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/backend:$BUILD_ID'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8080'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--max-instances=10'
+      - '--min-instances=1'
+      - '--timeout=300'
+      - '--concurrency=80'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,HOST=0.0.0.0,DATABASE_CLIENT=sqlite,DATABASE_FILENAME=.tmp/data.db,JWT_SECRET=your-jwt-secret-key,ADMIN_JWT_SECRET=your-admin-jwt-secret,TRANSFER_TOKEN_SALT=your-transfer-token-salt,API_TOKEN_SALT=your-api-token-salt,APP_KEYS=key1-key2-key3-key4,FRONTEND_URL=https://frontend-925756614203.us-central1.run.app'
+    waitFor: ['push-backend']
+
+  # Deploy frontend to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'photo-enhancement-frontend'
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/frontend:$BUILD_ID'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8240'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--max-instances=5'
+      - '--min-instances=0'
+      - '--timeout=60'
+      - '--concurrency=100'
+    id: 'deploy-frontend'
+    waitFor: ['push-frontend']
+
+# Store images in Artifact Registry
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/backend:$BUILD_ID'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/photo-enhancement/frontend:$BUILD_ID'
+
+# Build options
+options:
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY
+
+# Timeout for the entire build
+timeout: 1200s

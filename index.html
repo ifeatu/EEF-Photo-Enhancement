@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Photo Restoration | Elder Empowerment Foundation</title>
+    <meta name="description" content="Transform your faded family photos into vibrant, crystal-clear memories using cutting-edge AI technology. 100% of proceeds support elder care programs.">
+    <meta name="keywords" content="photo restoration, AI enhancement, elder empowerment, family photos, vintage photos, photo repair">
+    <meta name="author" content="Elder Empowerment Foundation">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://photos.empowerelders.org/">
+    <meta property="og:title" content="AI Photo Restoration | Elder Empowerment Foundation">
+    <meta property="og:description" content="Transform your faded family photos into vibrant, crystal-clear memories using cutting-edge AI technology.">
+    <meta property="og:image" content="https://photos.empowerelders.org/logos/elder-empowerment-logo-white-noback.gif">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://photos.empowerelders.org/">
+    <meta property="twitter:title" content="AI Photo Restoration | Elder Empowerment Foundation">
+    <meta property="twitter:description" content="Transform your faded family photos into vibrant, crystal-clear memories using cutting-edge AI technology.">
+    <meta property="twitter:image" content="https://photos.empowerelders.org/logos/elder-empowerment-logo-white-noback.gif">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://photos.empowerelders.org/">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/gif" href="logos/elder-empowerment-logo-white-noback.gif">
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-green: #8BC34A;
+            --dark-green: #689F38;
+            --light-green: #C5E1A5;
+            --text-dark: #2C3E50;
+            --text-light: #5D6D7E;
+            --bg-light: #F8F9FA;
+            --white: #FFFFFF;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* Modern Header */
+        .header {
+            background: var(--white);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-svg {
+            width: 50px;
+            height: 50px;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            letter-spacing: 1px;
+        }
+
+        .logo-subtitle {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 30px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .nav-button.outline {
+            background: transparent;
+            color: var(--primary-green);
+            border: 2px solid var(--primary-green);
+        }
+
+        .nav-button.outline:hover {
+            background: var(--primary-green);
+            color: var(--white);
+        }
+
+        .nav-button.primary {
+            background: var(--primary-green);
+            color: var(--white);
+        }
+
+        .nav-button.primary:hover {
+            background: var(--dark-green);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 195, 74, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 4rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(139, 195, 74, 0.05) 0%, rgba(197, 225, 165, 0.05) 100%);
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Examples Gallery */
+        .examples-section {
+            padding: 4rem 0;
+            background: var(--white);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .section-subtitle {
+            color: var(--text-light);
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .example-card {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .example-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(139, 195, 74, 0.2);
+        }
+
+        .example-images {
+            position: relative;
+            height: 320px;
+            overflow: hidden;
+            background: var(--bg-light);
+        }
+
+        .example-image {
+            position: absolute;
+            width: 50%;
+            height: 120%;
+            object-fit: cover;
+            object-position: center 15%;
+            transform: scale(1.1);
+        }
+
+        .example-image.before {
+            left: 0;
+            filter: sepia(0.5) contrast(0.8) brightness(0.9);
+        }
+
+        .example-image.after {
+            right: 0;
+        }
+
+        .comparison-slider {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--primary-green);
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .comparison-slider::before {
+            content: '↔';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--primary-green);
+            color: var(--white);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .example-labels {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            z-index: 5;
+        }
+
+        .label-badge {
+            background: rgba(0, 0, 0, 0.7);
+            color: var(--white);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .example-info {
+            padding: 1.5rem;
+        }
+
+        .example-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .example-description {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Main Upload Card */
+        .upload-section {
+            padding: 4rem 0;
+        }
+
+        .upload-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 10px 40px var(--shadow);
+        }
+
+        .upload-area {
+            border: 3px dashed var(--light-green);
+            border-radius: 16px;
+            padding: 4rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(139, 195, 74, 0.03) 0%, rgba(197, 225, 165, 0.03) 100%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-green);
+            background: linear-gradient(135deg, rgba(139, 195, 74, 0.08) 0%, rgba(197, 225, 165, 0.08) 100%);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--dark-green);
+            background: linear-gradient(135deg, rgba(139, 195, 74, 0.15) 0%, rgba(197, 225, 165, 0.15) 100%);
+        }
+
+        .upload-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .upload-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: var(--white);
+        }
+
+        .upload-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-subtitle {
+            color: var(--text-light);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* AI Prompt Section */
+        .prompt-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-light);
+            border-radius: 12px;
+            border: 1px solid rgba(139, 195, 74, 0.2);
+        }
+
+        .prompt-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .prompt-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--white);
+            transition: all 0.3s ease;
+        }
+
+        .prompt-input:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 4px rgba(139, 195, 74, 0.1);
+        }
+
+        /* Preview Section */
+        .preview-section {
+            display: none;
+            margin-top: 3rem;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .preview-section.active {
+            display: block;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        .preview-card {
+            background: var(--bg-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .preview-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .preview-image-container {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .preview-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Process Button */
+        .process-button {
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+            color: var(--white);
+            border: none;
+            padding: 1rem 3rem;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 2rem auto;
+            box-shadow: 0 4px 20px rgba(139, 195, 74, 0.3);
+        }
+
+        .process-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(139, 195, 74, 0.4);
+        }
+
+        .process-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Loading State */
+        .loading-spinner {
+            display: none;
+            width: 60px;
+            height: 60px;
+            margin: 2rem auto;
+            border: 4px solid var(--light-green);
+            border-top-color: var(--primary-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Download Button */
+        .download-button {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: var(--white);
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .download-button.active {
+            display: inline-block;
+        }
+
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        /* Pricing Section */
+        .pricing-section {
+            padding: 4rem 0;
+            background: linear-gradient(135deg, rgba(139, 195, 74, 0.05) 0%, rgba(197, 225, 165, 0.05) 100%);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .pricing-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(139, 195, 74, 0.2);
+        }
+
+        .pricing-card.featured {
+            border-color: var(--primary-green);
+        }
+
+        .pricing-card.featured::before {
+            content: 'MOST POPULAR';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-green);
+            color: var(--white);
+            padding: 0.25rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .pricing-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .pricing-price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-price sup {
+            font-size: 1.5rem;
+        }
+
+        .pricing-period {
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .pricing-features li {
+            padding: 0.75rem 0;
+            color: var(--text-light);
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--primary-green);
+            font-weight: bold;
+        }
+
+        .pricing-button {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--primary-green);
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: var(--primary-green);
+        }
+
+        .pricing-button:hover {
+            background: var(--primary-green);
+            color: var(--white);
+        }
+
+        .pricing-card.featured .pricing-button {
+            background: var(--primary-green);
+            color: var(--white);
+        }
+
+        .pricing-card.featured .pricing-button:hover {
+            background: var(--dark-green);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 2rem 0;
+            background: var(--text-dark);
+            color: var(--white);
+            text-align: center;
+        }
+
+        .footer-text {
+            opacity: 0.8;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Accessibility Improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Focus styles for better accessibility */
+        .nav-button:focus,
+        .process-button:focus,
+        .download-button:focus,
+        .pricing-button:focus,
+        .prompt-input:focus {
+            outline: 3px solid var(--primary-green);
+            outline-offset: 2px;
+        }
+
+        .upload-area:focus-within {
+            outline: 3px solid var(--primary-green);
+            outline-offset: 2px;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --primary-green: #2E7D32;
+                --dark-green: #1B5E20;
+                --text-dark: #000000;
+                --text-light: #424242;
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            
+            .upload-icon {
+                animation: none;
+            }
+        }
+
+        /* Enhanced Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 0 1.5rem;
+            }
+            
+            .upload-card {
+                padding: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 3rem 1rem;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+                line-height: 1.2;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .header-content {
+                padding: 0 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .logo-section {
+                justify-content: center;
+            }
+            
+            .nav-buttons {
+                gap: 0.5rem;
+                justify-content: center;
+            }
+            
+            .nav-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+            
+            .preview-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .examples-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .upload-area {
+                padding: 3rem 1rem;
+            }
+            
+            .upload-card {
+                padding: 1.5rem;
+                margin: 0 1rem;
+            }
+            
+            .section-title {
+                font-size: 1.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .logo-title {
+                font-size: 1rem;
+            }
+            
+            .logo-subtitle {
+                font-size: 0.8rem;
+            }
+            
+            .nav-button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .upload-title {
+                font-size: 1.25rem;
+            }
+            
+            .upload-subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .process-button {
+                padding: 0.875rem 2rem;
+                font-size: 1rem;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .header,
+            .upload-section,
+            .pricing-section {
+                display: none;
+            }
+            
+            .examples-section {
+                page-break-inside: avoid;
+            }
+            
+            .example-card {
+                break-inside: avoid;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" role="banner">
+        <div class="header-content">
+            <div class="logo-section">
+                <img src="logos/elder-empowerment-logo-white-noback.gif" alt="Elder Empowerment Foundation Logo" class="logo-svg" style="background: var(--primary-green); border-radius: 50%; padding: 5px;">
+                <div class="logo-text">
+                    <div class="logo-title">ELDER EMPOWERMENT</div>
+                    <div class="logo-subtitle">foundation</div>
+                </div>
+            </div>
+            <nav class="nav-buttons" role="navigation" aria-label="Main navigation">
+                <a href="https://empowerelders.org/about" class="nav-button outline" style="text-decoration: none; display: inline-block;" aria-label="Learn about Elder Empowerment Foundation">About EEF</a>
+                <a href="https://empowerelders.org/donate" class="nav-button primary" style="text-decoration: none; display: inline-block;" aria-label="Donate to Elder Empowerment Foundation">Donate</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" role="main" aria-labelledby="hero-title">
+        <h1 id="hero-title">Restore Precious Memories with AI</h1>
+        <p>Transform your faded family photos into vibrant, crystal-clear memories using cutting-edge AI technology</p>
+    </section>
+
+    <!-- Examples Gallery -->
+    <section class="examples-section" role="region" aria-labelledby="examples-title">
+        <div class="container">
+            <div class="section-header">
+                <h2 id="examples-title" class="section-title">Witness the Transformation</h2>
+                <p class="section-subtitle">Real examples from families we've helped preserve their heritage</p>
+            </div>
+            
+            <div class="examples-grid">
+                <div class="example-card">
+                    <div class="example-images">
+                        <div class="example-labels">
+                            <span class="label-badge">Before</span>
+                            <span class="label-badge">After</span>
+                        </div>
+                        <img src="photos/photo-4-before.jpg" class="example-image before" alt="Before restoration" loading="lazy">
+                        <img src="photos/photo-4-after.png" class="example-image after" alt="After restoration" loading="lazy">
+                        <div class="comparison-slider"></div>
+                    </div>
+                    <div class="example-info">
+                        <h3 class="example-title">Childhood Treasures</h3>
+                        <p class="example-description">Enhanced details and corrected aging effects in this precious childhood photograph</p>
+                    </div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-images">
+                        <div class="example-labels">
+                            <span class="label-badge">Before</span>
+                            <span class="label-badge">After</span>
+                        </div>
+                        <img src="photos/photo-2-before.jpg" class="example-image before" alt="Before restoration" loading="lazy">
+                        <img src="photos/photo-2-after.png" class="example-image after" alt="After restoration" loading="lazy">
+                        <div class="comparison-slider"></div>
+                    </div>
+                    <div class="example-info">
+                        <h3 class="example-title">Wedding Day Memories</h3>
+                        <p class="example-description">Brought new life to this vintage wedding photograph with AI enhancement</p>
+                    </div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-images">
+                        <div class="example-labels">
+                            <span class="label-badge">Before</span>
+                            <span class="label-badge">After</span>
+                        </div>
+                        <img src="photos/photo-1-before.jpg" class="example-image before" alt="Before restoration" loading="lazy">
+                        <img src="photos/photo-1-after.png" class="example-image after" alt="After restoration" loading="lazy">
+                        <div class="comparison-slider"></div>
+                    </div>
+                    <div class="example-info">
+                        <h3 class="example-title">Faded Family Portrait</h3>
+                        <p class="example-description">Restored vibrant colors and enhanced clarity for this precious family memory</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section class="upload-section" role="region" aria-labelledby="upload-title">
+        <div class="container">
+            <div class="upload-card">
+                <div class="upload-area" id="uploadArea" role="button" tabindex="0" aria-label="Upload photo area - click or drag and drop to select image">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                        </svg>
+                    </div>
+                    <h2 id="upload-title" class="upload-title">Upload Your Photo</h2>
+                    <p class="upload-subtitle">Drag & drop or click to browse</p>
+                    <input type="file" id="fileInput" accept="image/*" aria-label="Select image file for enhancement">
+                </div>
+
+                <div class="prompt-section">
+                    <label class="prompt-label" for="promptInput">
+                        ✨ AI Enhancement Instructions
+                    </label>
+                    <input 
+                        type="text" 
+                        class="prompt-input" 
+                        id="promptInput" 
+                        value="Enhance this photo as if it was taken on a DSLR camera"
+                        placeholder="Describe how you'd like your photo enhanced..."
+                        aria-describedby="prompt-help"
+                    >
+                    <div id="prompt-help" class="sr-only">Enter specific instructions for how you want your photo enhanced using AI technology</div>
+                </div>
+
+                <div class="preview-section" id="previewSection">
+                    <div class="preview-grid">
+                        <div class="preview-card">
+                            <h3 class="preview-title">📷 Original</h3>
+                            <div class="preview-image-container">
+                                <img id="originalImage" class="preview-image" alt="Original">
+                            </div>
+                        </div>
+                        <div class="preview-card">
+                            <h3 class="preview-title">✨ Enhanced</h3>
+                            <div class="preview-image-container">
+                                <img id="enhancedImage" class="preview-image" alt="Enhanced" style="display: none;">
+                                <div class="loading-spinner" id="loadingSpinner"></div>
+                            </div>
+                            <button class="download-button" id="downloadButton">Download Enhanced Photo</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="process-button" id="processButton" style="display: none;">
+                    Restore My Photo
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing-section" role="region" aria-labelledby="pricing-title">
+        <div class="container">
+            <div class="section-header">
+                <h2 id="pricing-title" class="section-title">Choose Your Plan</h2>
+                <p class="section-subtitle">100% of proceeds support our elder care programs</p>
+            </div>
+
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3 class="pricing-title">Starter</h3>
+                    <div class="pricing-price">Free</div>
+                    <div class="pricing-period">3 photos per month</div>
+                    <ul class="pricing-features">
+                        <li>Basic AI enhancement</li>
+                        <li>Standard resolution</li>
+                        <li>Watermarked downloads</li>
+                        <li>Email support</li>
+                    </ul>
+                    <button class="pricing-button">Get Started</button>
+                </div>
+
+                <div class="pricing-card featured">
+                    <h3 class="pricing-title">Family</h3>
+                    <div class="pricing-price"><sup>$</sup>9<sup>.99</sup></div>
+                    <div class="pricing-period">per month</div>
+                    <ul class="pricing-features">
+                        <li>Unlimited restorations</li>
+                        <li>Premium AI models</li>
+                        <li>High resolution exports</li>
+                        <li>No watermarks</li>
+                        <li>Priority processing</li>
+                        <li>24/7 support</li>
+                    </ul>
+                    <button class="pricing-button">Start Free Trial</button>
+                </div>
+
+                <div class="pricing-card">
+                    <h3 class="pricing-title">Legacy</h3>
+                    <div class="pricing-price"><sup>$</sup>24<sup>.99</sup></div>
+                    <div class="pricing-period">per month</div>
+                    <ul class="pricing-features">
+                        <li>Everything in Family</li>
+                        <li>Batch processing</li>
+                        <li>Cloud storage (1TB)</li>
+                        <li>Share with 10 family members</li>
+                        <li>Professional colorization</li>
+                        <li>Dedicated support</li>
+                    </ul>
+                    <button class="pricing-button">Contact Us</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <p class="footer-text">© 2024 Elder Empowerment Foundation. All proceeds support elder care initiatives.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Image loading optimization
+         function optimizeImageLoading() {
+             const images = document.querySelectorAll('img[loading="lazy"]');
+             
+             // Add intersection observer for better loading performance
+             if ('IntersectionObserver' in window) {
+                 const imageObserver = new IntersectionObserver((entries, observer) => {
+                     entries.forEach(entry => {
+                         if (entry.isIntersecting) {
+                             const img = entry.target;
+                             img.src = img.src; // Trigger loading
+                             observer.unobserve(img);
+                         }
+                     });
+                 });
+                 
+                 images.forEach(img => imageObserver.observe(img));
+             }
+         }
+
+         // Initialize image optimization
+         optimizeImageLoading();
+
+        // File upload functionality
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewSection = document.getElementById('previewSection');
+        const originalImage = document.getElementById('originalImage');
+        const enhancedImage = document.getElementById('enhancedImage');
+        const processButton = document.getElementById('processButton');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const downloadButton = document.getElementById('downloadButton');
+        
+        let currentFile = null;
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Keyboard navigation for upload area
+        uploadArea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+            uploadArea.setAttribute('aria-label', 'Drop image here to upload');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+            uploadArea.setAttribute('aria-label', 'Upload photo area - click or drag and drop to select image');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            uploadArea.setAttribute('aria-label', 'Upload photo area - click or drag and drop to select image');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showErrorMessage('Please select a valid image file (JPG, PNG, GIF, etc.)');
+                return;
+            }
+            
+            // Validate file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showErrorMessage('File size too large. Please select an image under 10MB.');
+                return;
+            }
+            
+            currentFile = file;
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                originalImage.src = e.target.result;
+                previewSection.classList.add('active');
+                processButton.style.display = 'block';
+                enhancedImage.style.display = 'none';
+                downloadButton.classList.remove('active');
+                hideErrorMessage();
+            };
+            
+            reader.onerror = () => {
+                showErrorMessage('Error reading file. Please try again.');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        
+        function showErrorMessage(message) {
+            let errorDiv = document.getElementById('errorMessage');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.id = 'errorMessage';
+                errorDiv.style.cssText = `
+                    background: #ffebee;
+                    color: #c62828;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    margin-top: 1rem;
+                    border-left: 4px solid #c62828;
+                    font-weight: 500;
+                `;
+                uploadArea.parentNode.insertBefore(errorDiv, uploadArea.nextSibling);
+            }
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function hideErrorMessage() {
+            const errorDiv = document.getElementById('errorMessage');
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!currentFile) return;
+            
+            processButton.disabled = true;
+            loadingSpinner.classList.add('active');
+            enhancedImage.style.display = 'none';
+            
+            // Simulate processing
+            setTimeout(() => {
+                enhancedImage.src = originalImage.src;
+                enhancedImage.style.display = 'block';
+                loadingSpinner.classList.remove('active');
+                downloadButton.classList.add('active');
+                processButton.disabled = false;
+            }, 2000);
+        });
+
+        downloadButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'enhanced_photo.jpg';
+            link.href = enhancedImage.src;
+            link.click();
+        });
+
+        // Pricing buttons
+        document.querySelectorAll('.pricing-button').forEach(button => {
+            button.addEventListener('click', () => {
+                alert('Payment integration would be implemented here');
+            });
+        });
+    </script>
+</body>
+</html>

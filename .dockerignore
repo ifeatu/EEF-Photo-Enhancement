@@ -1,0 +1,96 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+DEPLOYMENT-GCP.md
+*.md
+
+# Node modules (will be installed in container)
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (will be set via Cloud Run)
+.env
+.env.local
+.env.development
+.env.test
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
+
+# Build outputs (will be built in container)
+dist
+build
+.next
+.nuxt
+
+# Test files
+__tests__
+*.test.js
+*.spec.js
+test
+tests
+
+# Deployment files
+deploy-gcp.sh
+cloudbuild.yaml
+docker-compose.yml
+Dockerfile*
+
+# Temporary files
+tmp
+temp
+
+# Cache
+.cache
+.parcel-cache
+
+# Vercel
+.vercel
+
+# Local development
+.env.example
+
+# Photos and uploads (should be in cloud storage)
+photos/
+public/uploads/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
