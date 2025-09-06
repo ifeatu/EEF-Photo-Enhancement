@@ -1,26 +1,20 @@
-# Multi-stage Dockerfile for Photo Enhancement Backend
-# This Dockerfile builds the Strapi backend from the backend directory
+FROM node:18-alpine
 
-FROM node:18-alpine AS base
+WORKDIR /app
 
 # Install required system dependencies
 RUN apk add --no-cache sqlite dumb-init
-
-# Set working directory
-WORKDIR /app
 
 # Create necessary directories
 RUN mkdir -p /app/data /app/public/uploads && \
     chown -R node:node /app
 
-# Copy package files first
+# Copy and install dependencies
 COPY backend/package*.json ./
+RUN npm ci --production=false
 
-# Install dependencies
-RUN npm install
-
-# Copy rest of backend source
-COPY backend/ ./
+# Copy source code
+COPY backend/ .
 
 # Build application
 RUN npm run build && \
