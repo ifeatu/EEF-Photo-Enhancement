@@ -17,7 +17,7 @@ RUN mkdir -p /app/data /app/public/uploads && \
 COPY backend/package*.json ./
 
 # Install dependencies
-RUN npm ci --production=false
+RUN npm install
 
 # Copy backend source code
 COPY backend/ ./
