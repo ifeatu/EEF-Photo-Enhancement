@@ -9,12 +9,11 @@ RUN apk add --no-cache sqlite dumb-init
 RUN mkdir -p /app/data /app/public/uploads && \
     chown -R node:node /app
 
-# Copy and install dependencies
-COPY backend/package*.json ./
-RUN npm install
-
-# Copy source code
+# Copy entire backend directory
 COPY backend/ .
+
+# Install dependencies
+RUN npm install
 
 # Build application
 RUN npm run build && \
