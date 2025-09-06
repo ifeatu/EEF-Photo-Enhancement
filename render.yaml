@@ -2,7 +2,7 @@ services:
   - type: web
     name: photo-enhancement-backend
     env: docker
-    dockerfilePath: ./backend/Dockerfile
+    dockerfilePath: ./backend/Dockerfile.render
     dockerContext: ./backend
     plan: starter
     region: oregon
