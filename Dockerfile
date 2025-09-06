@@ -9,9 +9,9 @@ RUN apk add --no-cache sqlite dumb-init
 RUN mkdir -p /app/data /app/public/uploads && \
     chown -R node:node /app
 
-# Copy and install dependencies
+# Copy package files and install dependencies
 COPY backend/package*.json ./
-RUN npm ci --production=false
+RUN npm install
 
 # Copy source code
 COPY backend/ .
@@ -28,4 +28,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s \
   CMD node -e "require('http').get('http://localhost:$PORT/_health', (res) => process.exit(res.statusCode === 204 ? 0 : 1))"
 
 EXPOSE $PORT
-CMD ["dumb-init", "npm", "start"]
+CMD ["dumb-init", "node", "index.js"]
