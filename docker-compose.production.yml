@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "1337:1337"
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - DATABASE_CLIENT=sqlite
+      - DATABASE_FILENAME=/app/data/database.db
+      - JWT_SECRET=91ccb687da2e92b826d5bf296d9417872076788472cac3c98cc8348f9d06b1c7
+      - ADMIN_JWT_SECRET=a71715d475c761fe37c706a1268f9a9013e7f41dd4e025a708a21d22138e499c
+      - TRANSFER_TOKEN_SALT=b8f4a2e9d6c1539a7e3f8b2d4c6e9a1f5c7d0b3a
+      - API_TOKEN_SALT=c9e5b3f1a7d8524b6f0e2c8a5d9b7e4f1a6c8d2b
+      - APP_KEYS=key1-docker,key2-docker,key3-docker,key4-docker
+      - STRAPI_TELEMETRY_DISABLED=true
+    volumes:
+      - backend_data:/app/data
+      - backend_uploads:/app/public/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:1337/_health', (res) => process.exit(res.statusCode === 204 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://backend:1337/api
+      - VITE_NODE_ENV=production
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/ssl/certs:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_data:
+  backend_uploads:
