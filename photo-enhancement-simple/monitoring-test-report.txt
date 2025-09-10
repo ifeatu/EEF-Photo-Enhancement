@@ -1,0 +1,56 @@
+[2025-09-10T22:14:15.785Z] 🚀 COMPREHENSIVE MONITORING SYSTEM TEST STARTING
+
+[2025-09-10T22:14:15.787Z] 
+=== HEALTH CHECK SYSTEM TEST ===
+[2025-09-10T22:14:15.796Z] Health endpoint: ❌ (0)
+[2025-09-10T22:14:15.796Z] Health Checks: ❌ FAILED
+[2025-09-10T22:14:15.796Z] 
+=== DEBUG ENDPOINTS TEST ===
+[2025-09-10T22:14:15.797Z] Debug endpoint: ❌ (0)
+[2025-09-10T22:14:15.797Z] Debug Endpoints: ❌ FAILED
+[2025-09-10T22:14:15.797Z] 
+=== ALERTING SYSTEM TEST ===
+[2025-09-10T22:14:15.798Z] Alert status: ❌ (0)
+[2025-09-10T22:14:15.799Z] Alert check trigger: ❌ (0)
+[2025-09-10T22:14:15.800Z] Alert test: ❌ (0)
+[2025-09-10T22:14:15.800Z] Alerting System: ❌ FAILED
+[2025-09-10T22:14:15.800Z] 
+=== REQUEST TRACING TEST ===
+[2025-09-10T22:14:15.801Z] Traced request: ❌ (0)
+[2025-09-10T22:14:15.801Z] ❌ Trace ID not preserved
+[2025-09-10T22:14:15.801Z] ❌ Correlation ID not preserved
+[2025-09-10T22:14:15.801Z] Request Tracing: ❌ FAILED
+[2025-09-10T22:14:15.801Z] 
+=== ERROR TRACKING TEST ===
+[2025-09-10T22:14:15.802Z] Upload error test: ❌ (0)
+[2025-09-10T22:14:15.802Z] Enhancement error test: ❌ (0)
+[2025-09-10T22:14:15.802Z] Error Tracking: ✅ PASSED
+[2025-09-10T22:14:15.802Z] 
+=== METRICS COLLECTION TEST ===
+[2025-09-10T22:14:15.805Z] Metrics generation: 0/5 requests successful
+[2025-09-10T22:14:15.805Z] Response time tracking: ✅ (5 measurements)
+[2025-09-10T22:14:15.805Z] Metrics Collection: ❌ FAILED
+[2025-09-10T22:14:15.805Z] 
+=== STRUCTURED LOGGING TEST ===
+[2025-09-10T22:14:15.806Z] ❌ No correlation ID for /api/health
+[2025-09-10T22:14:15.806Z] ❌ No correlation ID for /api/debug
+[2025-09-10T22:14:15.807Z] ❌ No correlation ID for /api/alerts
+[2025-09-10T22:14:15.807Z] Structured logging coverage: 0/3 endpoints
+[2025-09-10T22:14:15.807Z] Structured Logging: ❌ FAILED
+[2025-09-10T22:14:15.807Z] 
+=== SECURITY HEADERS TEST ===
+[2025-09-10T22:14:15.807Z] Security Headers: ❌ FAILED
+[2025-09-10T22:14:15.808Z] 
+=== PERFORMANCE MONITORING TEST ===
+[2025-09-10T22:14:15.808Z] Response time: 0ms
+[2025-09-10T22:14:15.808Z] ✅ Response time within acceptable limits
+[2025-09-10T22:14:15.809Z] Concurrent requests (3): 1ms
+[2025-09-10T22:14:15.809Z] Concurrent success rate: 0/3
+[2025-09-10T22:14:15.809Z] Performance Monitoring: ❌ FAILED
+[2025-09-10T22:14:15.809Z] 
+=== TEST SUMMARY ===
+[2025-09-10T22:14:15.809Z] Tests passed: 1/9
+[2025-09-10T22:14:15.809Z] Success rate: 11%
+[2025-09-10T22:14:15.809Z] ❌ Multiple monitoring system failures detected
+[2025-09-10T22:14:15.809Z] 
+=== GENERATING TEST REPORT ===

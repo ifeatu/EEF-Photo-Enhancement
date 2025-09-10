@@ -29,7 +29,7 @@ export default function PhotoDetailPage() {
   const [progress, setProgress] = useState(0);
   const [retrying, setRetrying] = useState(false);
 
-  const photoId = params.id as string;
+  const photoId = params?.id as string;
 
   const fetchPhoto = async () => {
     try {

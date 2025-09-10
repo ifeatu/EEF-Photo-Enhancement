@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/api-auth';
 // Dynamic import for Google AI to avoid build-time evaluation
 import { put } from '@vercel/blob';
 import type { Session } from 'next-auth';
-import { logger } from '@/lib/logger';
+import { logger, generateCorrelationId, setCorrelationId } from '@/lib/logger';
 import { 
   AppError, 
   NotFoundError, 
@@ -18,6 +18,25 @@ import {
   validateRequest,
   hasRequiredFields 
 } from '@/lib/api-response';
+import { EnhancementMetrics } from '@/lib/metrics';
+import { addBreadcrumb, captureEnhancementError } from '@/lib/sentry';
+import { alertManager } from '@/lib/alerting';
+import { tracer } from '@/lib/tracing';
+
+// Handle CORS preflight requests
+export async function OPTIONS(request: NextRequest) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+  };
+  
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders
+  });
+}
 
 // Initialize Gemini AI with Nano Banana model (dynamic import for Vercel compatibility)
 async function getGeminiModel() {
@@ -205,11 +224,24 @@ function isValidEnhanceRequest(data: unknown): data is EnhanceRequest {
 }
 
 export const POST = withApiHandler(async (request: NextRequest) => {
+  const startTime = Date.now();
+  const correlationId = generateCorrelationId();
+  setCorrelationId(correlationId);
+  
+  const trace = tracer.startTrace('photo-enhancement', {
+    operation: 'enhance_photo',
+    correlationId
+  });
+  
+  addBreadcrumb('Enhancement request started', 'enhancement');
+  
   let userId: string;
   
   // Check if this is an internal service call from cron or upload service
   const internalServiceHeader = request.headers.get('x-internal-service');
   const isInternalService = internalServiceHeader === 'cron-processor' || internalServiceHeader === 'upload-service' || internalServiceHeader === 'legacy-cleanup';
+  
+  addBreadcrumb(`Enhancement request type: ${isInternalService ? 'internal' : 'external'}`, 'enhancement', { internalServiceHeader });
   
   if (isInternalService) {
     // For internal service calls, get userId from header or from photo record
@@ -247,6 +279,15 @@ export const POST = withApiHandler(async (request: NextRequest) => {
     userId = photoForUserId.userId;
   }
 
+  addBreadcrumb('Looking up photo in database', 'database', { photoId, userId });
+  
+  // Create span for photo validation
+  const validationSpan = trace.createSpan('photo-validation', {
+    operation: 'validate_photo_access',
+    photoId,
+    userId
+  });
+  
   // Get photo from database with proper error handling
   // Allow both PENDING and FAILED photos for retry functionality
   const photo = await prisma.photo.findFirst({
@@ -266,11 +307,27 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   });
 
   if (!photo) {
+    validationSpan.addTag('error', 'true');
+      validationSpan.error(new Error('Photo not found'));
+    validationSpan.finish();
+    
+    const processingTime = Date.now() - startTime;
+    const notFoundError = new Error('Photo not found');
+    logger.enhancementError(photoId, userId, notFoundError, processingTime);
+    addBreadcrumb('Photo not found in database', 'error', { photoId, userId });
+    
+    trace.finish();
     throw new NotFoundError('Photo');
   }
 
-  logger.info('Starting photo enhancement', { photoId, userId });
+  validationSpan.finish();
+  
+  addBreadcrumb('Photo found, starting enhancement', 'enhancement', { photoId, status: photo.status });
+  logger.enhancementStart(photoId, userId);
+  EnhancementMetrics.recordEnhancementStart(photoId, userId);
 
+  addBreadcrumb('Updating photo status to PROCESSING', 'database', { photoId });
+  
   // Update status to processing
   await prisma.photo.update({
     where: { id: photoId },
@@ -281,16 +338,38 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   });
 
   try {
+    addBreadcrumb('Starting AI enhancement with retry mechanism', 'enhancement', { 
+      maxRetries: ENHANCEMENT_CONFIG.MAX_RETRIES,
+      originalUrl: photo.originalUrl 
+    });
+    
+    // Create span for AI enhancement
+    const enhancementSpan = trace.createSpan('ai-enhancement', {
+      operation: 'enhance_with_ai',
+      photoId,
+      originalUrl: photo.originalUrl
+    });
+    
     // Enhance the photo with retry mechanism
     let enhancedUrl: string;
     let lastError: Error | null = null;
     
     for (let attempt = 1; attempt <= ENHANCEMENT_CONFIG.MAX_RETRIES + 1; attempt++) {
       try {
+        addBreadcrumb(`Enhancement attempt ${attempt}`, 'enhancement', { attempt, photoId });
         enhancedUrl = await enhancePhotoWithAI(photo.originalUrl);
+        addBreadcrumb(`Enhancement attempt ${attempt} succeeded`, 'enhancement', { attempt, photoId });
+        enhancementSpan.addTag('attempts', attempt.toString());
+         enhancementSpan.addTag('success', 'true');
         break;
       } catch (error) {
         lastError = error as Error;
+        
+        addBreadcrumb(`Enhancement attempt ${attempt} failed`, 'error', { 
+          attempt, 
+          photoId, 
+          error: lastError.message 
+        });
         
         if (attempt <= ENHANCEMENT_CONFIG.MAX_RETRIES) {
           logger.warn(`Enhancement attempt ${attempt} failed, retrying`, { 
@@ -302,17 +381,46 @@ export const POST = withApiHandler(async (request: NextRequest) => {
           // Exponential backoff
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         } else {
+          enhancementSpan.addTag('error', 'true');
+           enhancementSpan.error(lastError);
           throw lastError;
         }
       }
     }
 
+    enhancementSpan.finish();
+    
+    addBreadcrumb('Validating enhanced URL', 'validation', { enhancedUrl: enhancedUrl! });
+    
+    // Create span for URL validation
+    const urlValidationSpan = trace.createSpan('url-validation', {
+      operation: 'validate_enhanced_url',
+      enhancedUrl: enhancedUrl!
+    });
+    
     // Validate enhanced URL before saving
     const isValidUrl = await validateEnhancedUrl(enhancedUrl!);
     if (!isValidUrl) {
+      urlValidationSpan.addTag('error', 'true');
+       urlValidationSpan.error(new Error('Enhanced URL validation failed'));
+      urlValidationSpan.finish();
+      
+      addBreadcrumb('Enhanced URL validation failed', 'error', { enhancedUrl: enhancedUrl! });
+      trace.finish();
       throw new AppError('Enhanced image URL is not accessible', 500, 'INVALID_ENHANCED_URL');
     }
+    
+    urlValidationSpan.finish();
 
+    addBreadcrumb('Enhanced URL validated, updating database', 'database', { enhancedUrl: enhancedUrl! });
+    
+    // Create span for database update
+    const dbUpdateSpan = trace.createSpan('database-update', {
+      operation: 'update_photo_status',
+      photoId,
+      status: 'COMPLETED'
+    });
+    
     // Update with enhanced result
     const updatedPhoto = await prisma.photo.update({
       where: { id: photoId },
@@ -328,12 +436,30 @@ export const POST = withApiHandler(async (request: NextRequest) => {
         updatedAt: true
       }
     });
+    
+    dbUpdateSpan.finish();
+
+    const processingTime = Date.now() - startTime;
+    
+    addBreadcrumb('Enhancement completed successfully', 'success', { 
+      photoId, 
+      processingTime,
+      enhancedUrl: updatedPhoto.enhancedUrl 
+    });
+    
+    logger.enhancementSuccess(photoId, userId, processingTime);
+    EnhancementMetrics.recordEnhancementSuccess(photoId, userId, processingTime);
 
     logger.info('Photo enhancement completed successfully', { 
       photoId, 
       userId,
-      enhancedUrl: updatedPhoto.enhancedUrl 
+      enhancedUrl: updatedPhoto.enhancedUrl,
+      processingTime
     });
+
+    trace.addMetadata('success', true);
+     trace.addMetadata('processing_time_ms', processingTime);
+    trace.finish();
 
     return createSuccessResponse({
       photoId: updatedPhoto.id,
@@ -343,9 +469,44 @@ export const POST = withApiHandler(async (request: NextRequest) => {
     });
 
   } catch (enhancementError) {
-    logger.error('Enhancement failed after all retries', enhancementError as Error, { 
+    const processingTime = Date.now() - startTime;
+    const error = enhancementError as Error;
+    
+    addBreadcrumb('Enhancement failed after all retries', 'error', { 
       photoId, 
-      userId 
+      userId,
+      processingTime,
+      error: error.message 
+    });
+    
+    logger.enhancementError(photoId, userId, error, processingTime);
+     EnhancementMetrics.recordEnhancementError(photoId, userId, error, processingTime);
+     captureEnhancementError(error, { photoId, userId, processingTime });
+     
+     // Record error for alerting and report if critical
+     alertManager.recordEnhancementError();
+     if (error instanceof Error && (error.message.includes('database') || error.message.includes('Gemini'))) {
+       await alertManager.reportCriticalError(error, {
+         userId,
+         photoId,
+         correlationId,
+         endpoint: '/api/photos/enhance'
+       });
+     }
+    
+    logger.error('Enhancement failed after all retries', error, { 
+      photoId, 
+      userId,
+      processingTime
+    });
+    
+    addBreadcrumb('Updating photo status to FAILED', 'database', { photoId });
+    
+    // Create span for failure database update
+    const failureUpdateSpan = trace.createSpan('database-update-failure', {
+      operation: 'update_photo_status',
+      photoId,
+      status: 'FAILED'
     });
     
     // Update status to failed
@@ -356,6 +517,13 @@ export const POST = withApiHandler(async (request: NextRequest) => {
         updatedAt: new Date()
       }
     });
+    
+    failureUpdateSpan.finish();
+    
+    trace.addMetadata('error', true);
+     trace.error(error);
+     trace.addMetadata('processing_time_ms', processingTime);
+    trace.finish();
     
     // Re-throw to be handled by error wrapper
     throw enhancementError;

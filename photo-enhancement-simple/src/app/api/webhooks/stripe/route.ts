@@ -9,6 +9,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!.trim(), {
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!.trim()
 
+// Handle CORS preflight requests
+export async function OPTIONS() {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, stripe-signature',
+    'Access-Control-Max-Age': '86400',
+  };
+  
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders
+  });
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text()
   const headersList = await headers()

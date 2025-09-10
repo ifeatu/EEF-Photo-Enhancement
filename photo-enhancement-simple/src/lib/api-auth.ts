@@ -108,9 +108,18 @@ export async function requireAdminAuth(): Promise<AuthResult> {
  * Helper function to create standardized error responses
  */
 export function createAuthErrorResponse(authResult: AuthResult): NextResponse {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  }
+  
   return NextResponse.json(
     { error: authResult.error },
-    { status: authResult.status || 500 }
+    { 
+      status: authResult.status || 500,
+      headers: corsHeaders
+    }
   )
 }
 

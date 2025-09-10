@@ -30,7 +30,16 @@ export function createSuccessResponse<T>(
     timestamp: new Date().toISOString()
   };
 
-  return NextResponse.json(response, { status: statusCode });
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  return NextResponse.json(response, { 
+    status: statusCode,
+    headers: corsHeaders
+  });
 }
 
 /**
@@ -42,6 +51,12 @@ export function createErrorResponse(
 ): NextResponse {
   const formatted = formatErrorResponse(error);
   const finalStatusCode = statusCode || formatted.statusCode;
+
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
 
   const response: ApiResponse = {
     success: false,
@@ -60,7 +75,10 @@ export function createErrorResponse(
     logger.error(`API Error: ${formatted.error}`, undefined, formatted.context);
   }
 
-  return NextResponse.json(response, { status: finalStatusCode });
+  return NextResponse.json(response, { 
+    status: finalStatusCode,
+    headers: corsHeaders
+  });
 }
 
 /**
