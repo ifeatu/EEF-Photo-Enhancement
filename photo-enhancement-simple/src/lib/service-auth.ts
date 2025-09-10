@@ -188,7 +188,22 @@ export class ServiceAccountAuth {
     const serviceTokens = this.getServiceTokens();
     
     for (const [accountId, config] of Object.entries(serviceTokens)) {
+      // Check if token matches the generated token (with sa_ prefix)
       if (this.verifyToken(token, config.secret)) {
+        return {
+          success: true,
+          method: 'token',
+          account: {
+            id: accountId,
+            name: config.name,
+            permissions: config.permissions,
+            createdAt: new Date(config.createdAt)
+          }
+        };
+      }
+      
+      // Also check if token matches the raw secret (backward compatibility)
+      if (this.timingSafeEqual(token, config.secret)) {
         return {
           success: true,
           method: 'token',
