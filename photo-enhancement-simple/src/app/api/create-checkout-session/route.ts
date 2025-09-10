@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-utils'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!.trim(), {
   apiVersion: '2025-08-27.basil',
 })
 
@@ -29,19 +29,19 @@ const subscriptionTiers = {
     name: 'Basic Subscription',
     monthlyCredits: 25,
     price: 1999, // $19.99 in cents
-    stripePriceId: process.env.STRIPE_BASIC_PRICE_ID,
+    stripePriceId: process.env.STRIPE_BASIC_PRICE_ID?.trim(),
   },
   pro: {
     name: 'Pro Subscription',
     monthlyCredits: 100,
     price: 6999, // $69.99 in cents
-    stripePriceId: process.env.STRIPE_PRO_PRICE_ID,
+    stripePriceId: process.env.STRIPE_PRO_PRICE_ID?.trim(),
   },
   enterprise: {
     name: 'Enterprise',
     monthlyCredits: 500,
     price: 19999, // $199.99 in cents
-    stripePriceId: process.env.STRIPE_ENTERPRISE_PRICE_ID,
+    stripePriceId: process.env.STRIPE_ENTERPRISE_PRICE_ID?.trim(),
   }
 }
 
@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true&credits=${plan.credits}`,
-        cancel_url: `${process.env.NEXTAUTH_URL}/pricing?canceled=true`,
+        success_url: `${process.env.NEXTAUTH_URL?.trim()}/dashboard?success=true&credits=${plan.credits}`,
+        cancel_url: `${process.env.NEXTAUTH_URL?.trim()}/pricing?canceled=true`,
         metadata: {
           userId: user.user.id,
           type: 'credits',
@@ -106,8 +106,8 @@ export async function POST(request: NextRequest) {
           },
         ],
         mode: 'subscription',
-        success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true&subscription=${planId}`,
-        cancel_url: `${process.env.NEXTAUTH_URL}/pricing?canceled=true`,
+        success_url: `${process.env.NEXTAUTH_URL?.trim()}/dashboard?success=true&subscription=${planId}`,
+        cancel_url: `${process.env.NEXTAUTH_URL?.trim()}/pricing?canceled=true`,
         metadata: {
           userId: user.user.id,
           type: 'subscription',

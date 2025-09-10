@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// Dynamic import for Google AI to avoid build-time evaluation
 import { put } from '@vercel/blob';
 import type { Session } from 'next-auth';
 import { logger } from '@/lib/logger';
@@ -20,13 +20,17 @@ import {
   hasRequiredFields 
 } from '@/lib/api-response';
 
-// Initialize Gemini AI with Nano Banana model
-if (!process.env.GOOGLE_AI_API_KEY) {
-  throw new Error('GOOGLE_AI_API_KEY environment variable is required');
+// Initialize Gemini AI with Nano Banana model (dynamic import for Vercel compatibility)
+async function getGeminiModel() {
+  if (!process.env.GOOGLE_AI_API_KEY) {
+    throw new Error('GOOGLE_AI_API_KEY environment variable is required');
+  }
+  
+  // Dynamic import to avoid build-time evaluation issues on Vercel
+  const { GoogleGenerativeAI } = await import('@google/generative-ai');
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY.trim());
+  return genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image-preview' });
 }
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image-preview' });
 
 // Configuration constants
 const ENHANCEMENT_CONFIG = {
@@ -132,6 +136,7 @@ async function enhancePhotoWithAI(photoUrl: string): Promise<string> {
     Professional Camera Feel: The final image should have the crisp, clear quality of a modern digital camera with a wide dynamic range.`;
     
     // Generate enhanced image with Nano Banana
+    const model = await getGeminiModel();
     const result = await model.generateContent([
       prompt,
       {

@@ -3,11 +3,11 @@ import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!.trim(), {
   apiVersion: '2025-08-27.basil',
 })
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!.trim()
 
 export async function POST(request: NextRequest) {
   const body = await request.text()

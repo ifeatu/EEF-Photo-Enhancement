@@ -1,19 +1,41 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import type { Adapter } from "next-auth/adapters";
 
+// Dynamic provider configuration to avoid build-time Google service initialization
+function getProviders() {
+  const providers: any[] = [];
+  
+  // Skip provider loading during build phase
+  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL && !process.env.GOOGLE_CLIENT_ID) {
+    return providers;
+  }
+  
+  try {
+    if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+      const GoogleProvider = require("next-auth/providers/google").default;
+      providers.push(
+        GoogleProvider({
+          clientId: process.env.GOOGLE_CLIENT_ID?.trim(),
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET?.trim(),
+        })
+      );
+    }
+  } catch (error) {
+    // Silent failure during build
+  }
+  
+  return providers;
+}
+
 export const authOptions: any = {
   adapter: PrismaAdapter(prisma) as Adapter,
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "dummy-client-id",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "dummy-client-secret",
-    }),
-  ],
+  providers: getProviders(),
   session: {
     strategy: "jwt",
   },
+  // Ensure environment variables are properly trimmed
+  secret: process.env.NEXTAUTH_SECRET?.trim(),
   callbacks: {
     session: async ({ session, token }: any) => {
       if (session?.user && token?.sub) {
