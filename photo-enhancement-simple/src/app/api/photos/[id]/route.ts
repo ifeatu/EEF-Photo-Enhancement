@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import type { Session } from 'next-auth';
+import { requireAuth, createAuthErrorResponse } from '@/lib/api-auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Use standardized auth
+  const authResult = await requireAuth();
+  if (!authResult.success || !authResult.user) {
+    return createAuthErrorResponse(authResult);
+  }
+  
+  const user = authResult.user;
+  
   try {
-    const session = await getServerSession(authOptions) as Session | null;
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const resolvedParams = await params;
     const photoId = resolvedParams.id;
 
@@ -26,7 +26,7 @@ export async function GET(
     const photo = await prisma.photo.findFirst({
       where: {
         id: photoId,
-        userId: session.user.id
+        userId: user.id
       },
       select: {
         id: true,
@@ -52,18 +52,20 @@ export async function GET(
   }
 }
 
-export async function PUT(
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const resolvedParams = await params;
+  // Use standardized auth
+  const authResult = await requireAuth();
+  if (!authResult.success || !authResult.user) {
+    return createAuthErrorResponse(authResult);
+  }
+  
+  const user = authResult.user;
+  
   try {
-    const session = await getServerSession(authOptions) as Session | null;
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    const resolvedParams = await params;
     const photoId = resolvedParams.id;
     const { title, description } = await request.json();
 
@@ -75,7 +77,7 @@ export async function PUT(
     const updatedPhoto = await prisma.photo.updateMany({
       where: {
         id: photoId,
-        userId: session.user.id
+        userId: user.id
       },
       data: {
         title,
@@ -92,7 +94,7 @@ export async function PUT(
     const photo = await prisma.photo.findFirst({
       where: {
         id: photoId,
-        userId: session.user.id
+        userId: user.id
       },
       select: {
         id: true,

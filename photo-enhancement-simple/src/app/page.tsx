@@ -51,7 +51,7 @@ export default async function Home() {
               ) : (
                 <>
                   <Link
-                    href="/upload"
+                    href="/dashboard"
                     className="rounded-md bg-blue-600 px-6 py-3 text-lg font-semibold text-white shadow-sm hover:bg-blue-500"
                   >
                     Upload Photo

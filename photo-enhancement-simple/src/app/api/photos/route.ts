@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import type { Session } from 'next-auth';
+import { withAuth } from '@/lib/api-auth';
 
-export async function GET() {
+export const GET = withAuth(async (request: NextRequest, user) => {
   try {
-    const session = await getServerSession(authOptions) as Session | null;
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const photos = await prisma.photo.findMany({
       where: {
-        userId: session.user.id
+        userId: user.id
       },
       orderBy: {
         createdAt: 'desc'
@@ -36,16 +29,10 @@ export async function GET() {
     console.error('Get photos error:', error);
     return NextResponse.json({ error: 'Failed to fetch photos' }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withAuth(async (request: NextRequest, user) => {
   try {
-    const session = await getServerSession(authOptions) as Session | null;
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const photoId = searchParams.get('id');
 
@@ -57,7 +44,7 @@ export async function DELETE(request: NextRequest) {
     const deletedPhoto = await prisma.photo.deleteMany({
       where: {
         id: photoId,
-        userId: session.user.id
+        userId: user.id
       }
     });
 
@@ -71,4 +58,4 @@ export async function DELETE(request: NextRequest) {
     console.error('Delete photo error:', error);
     return NextResponse.json({ error: 'Failed to delete photo' }, { status: 500 });
   }
-}
+});

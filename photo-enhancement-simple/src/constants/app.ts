@@ -134,7 +134,8 @@ export const STORAGE_KEYS = {
 } as const;
 
 // Environment variables
-export const ENV_VARS = {
+// Lazy getter for environment variables to avoid build-time evaluation
+export const getEnvVars = () => ({
   NODE_ENV: process.env.NODE_ENV,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
@@ -143,9 +144,14 @@ export const ENV_VARS = {
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-  GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
   BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN
-} as const;
+} as const);
+
+// Legacy export for backward compatibility
+export const ENV_VARS = getEnvVars();
+
+// Lazy getter for Google AI API key to avoid build-time evaluation
+export const getGoogleAIApiKey = () => process.env.GOOGLE_AI_API_KEY;
 
 // Feature flags
 export const FEATURES = {

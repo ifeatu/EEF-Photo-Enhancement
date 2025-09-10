@@ -98,7 +98,7 @@ async function runE2ETests() {
   log('Checking if development server is running...', 'blue');
   
   try {
-    const response = await fetch('http://localhost:3000');
+    const response = await fetch('http://localhost:3001');
     if (response.ok) {
       log('Development server is running, proceeding with E2E tests...', 'green');
     }

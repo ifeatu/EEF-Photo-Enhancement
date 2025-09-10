@@ -7,47 +7,30 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testEnvironment: 'jest-environment-jsdom',
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@auth/prisma-adapter$': '<rootDir>/src/__mocks__/@auth/prisma-adapter.js',
-  },
-  transformIgnorePatterns: [
-    'node_modules/(?!(next-auth|@auth/.*|jose|openid-client|oauth|oidc-token-hash|@panva)/)/',
-  ],
-  testEnvironmentOptions: {
-    customExportConditions: ['node', 'node-addons'],
-  },
-  globals: {
-    'ts-jest': {
-      useESM: true
-    },
-    TextDecoder: TextDecoder,
-    TextEncoder: TextEncoder,
-  },
-  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   projects: [
-    {
-      displayName: 'jsdom',
-      testEnvironment: 'jest-environment-jsdom',
-      testMatch: ['<rootDir>/src/**/*.test.{js,jsx,ts,tsx}'],
-      testPathIgnorePatterns: ['<rootDir>/src/app/api/'],
-    },
     {
       displayName: 'node',
       testEnvironment: 'jest-environment-node',
-      testMatch: ['<rootDir>/src/app/api/**/*.test.{js,ts}'],
+      testMatch: ['<rootDir>/src/app/api/**/*.test.{js,ts}', '<rootDir>/src/__tests__/api/**/*.test.{js,ts}'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.node.js'],
+      preset: 'ts-jest/presets/default-esm',
+      extensionsToTreatAsEsm: ['.ts'],
+      transform: {
+        '^.+\.ts$': ['ts-jest', {
+          useESM: true
+        }]
+      },
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+        '^@auth/prisma-adapter$': '<rootDir>/src/__mocks__/@auth/prisma-adapter.js',
+      },
     },
   ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/**/__tests__/**',
     '!src/**/*.test.{js,jsx,ts,tsx}',
-    '!src/**/*.spec.{js,jsx,ts,tsx}',
+    '!src/**/__tests__/**',
     '!src/app/layout.tsx',
     '!src/app/globals.css',
   ],

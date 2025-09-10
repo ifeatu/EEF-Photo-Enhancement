@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-auth';
 // Dynamic import for Google AI to avoid build-time evaluation
 import { put } from '@vercel/blob';
 import type { Session } from 'next-auth';
@@ -154,13 +153,14 @@ async function enhancePhotoWithAI(photoUrl: string): Promise<string> {
     }
     
     // Find the image part in the response
-    let enhancedImageData = null;
-    for (const part of candidate.content.parts) {
-      if (part.inlineData?.data) {
-        enhancedImageData = part.inlineData.data;
-        break;
+    const enhancedImageData = (() => {
+      for (const part of candidate.content.parts) {
+        if (part.inlineData?.data) {
+          return part.inlineData.data;
+        }
       }
-    }
+      return null;
+    })();
     
     if (!enhancedImageData) {
       throw new Error('No image data found in Nano Banana response');
@@ -205,13 +205,13 @@ function isValidEnhanceRequest(data: unknown): data is EnhanceRequest {
 }
 
 export const POST = withApiHandler(async (request: NextRequest) => {
-  // Authenticate user
-  const session = await getServerSession(authOptions) as Session | null;
-  if (!session?.user?.id) {
+  // Authenticate user using standardized auth
+  const authResult = await requireAuth();
+  if (!authResult.success || !authResult.user) {
     throw new AuthenticationError();
   }
   
-  const userId = session.user.id;
+  const userId = authResult.user.id;
 
   // Validate request body
   const body = await request.json();

@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { withAuth } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, user) => {
   try {
-    const session = await getServerSession(authOptions) as any;
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const user = await prisma.user.findUnique({
+    const dbUser = await prisma.user.findUnique({
       where: {
-        id: (session as any).user.id,
+        id: user.id,
       },
       select: {
         id: true,
@@ -28,14 +18,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (!user) {
+    if (!dbUser) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(dbUser);
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return NextResponse.json(
@@ -43,19 +33,10 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function PATCH(request: NextRequest) {
+export const PATCH = withAuth(async (request: NextRequest, user) => {
   try {
-    const session = await getServerSession(authOptions) as any;
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { name } = body;
 
@@ -68,7 +49,7 @@ export async function PATCH(request: NextRequest) {
 
     const updatedUser = await prisma.user.update({
       where: {
-        id: (session as any).user.id,
+        id: user.id,
       },
       data: {
         name,
@@ -91,4 +72,4 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

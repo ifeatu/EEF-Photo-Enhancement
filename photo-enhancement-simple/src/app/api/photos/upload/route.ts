@@ -32,27 +32,57 @@ export const POST = withAuth(async (request: NextRequest, user) => {
     // Check if Vercel Blob token is available
     if (process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_READ_WRITE_TOKEN.includes('YOUR_TOKEN_HERE')) {
       // Use Vercel Blob for production
-      const blob = await put(file.name, file, {
-        access: 'public',
-      });
-      imageUrl = blob.url;
+      try {
+        const blob = await put(file.name, file, {
+          access: 'public',
+        });
+        imageUrl = blob.url;
+      } catch (blobError: any) {
+         console.error('Vercel Blob upload failed:', blobError);
+         return NextResponse.json({ 
+           error: 'File upload service unavailable',
+           details: process.env.NODE_ENV === 'development' ? blobError.message : undefined
+         }, { status: 500 });
+      }
     } else {
-      // Use local file storage for development
+      // Use local file storage for development or fallback
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
       
-      // Create uploads directory if it doesn't exist
-      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-      await mkdir(uploadsDir, { recursive: true });
+      // Use /tmp directory for serverless environments, public/uploads for local development
+      const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+      const uploadsDir = isServerless 
+        ? path.join('/tmp', 'uploads')
+        : path.join(process.cwd(), 'public', 'uploads');
       
-      // Generate unique filename
-      const timestamp = Date.now();
-      const filename = `${timestamp}-${file.name}`;
-      const filepath = path.join(uploadsDir, filename);
-      
-      // Save file locally
-      await writeFile(filepath, buffer);
-      imageUrl = `/uploads/${filename}`;
+      try {
+        await mkdir(uploadsDir, { recursive: true });
+        
+        // Generate unique filename
+        const timestamp = Date.now();
+        const filename = `${timestamp}-${file.name}`;
+        const filepath = path.join(uploadsDir, filename);
+        
+        // Save file locally
+        await writeFile(filepath, buffer);
+        
+        // For local development, serve from public/uploads
+        // For serverless, this is a temporary file that won't be accessible via URL
+        if (isServerless) {
+          return NextResponse.json({ 
+            error: 'File storage service not configured',
+            message: 'Please configure BLOB_READ_WRITE_TOKEN for file uploads'
+          }, { status: 500 });
+        }
+        
+        imageUrl = `/uploads/${filename}`;
+      } catch (fileError: any) {
+        console.error('Local file storage failed:', fileError);
+        return NextResponse.json({ 
+          error: 'File storage failed',
+          details: process.env.NODE_ENV === 'development' ? fileError.message : undefined
+        }, { status: 500 });
+      }
     }
 
     // Create photo record in database

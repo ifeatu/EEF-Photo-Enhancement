@@ -40,7 +40,7 @@ describe('OAuth Flow Integration Tests', () => {
 
   describe('OAuth Callback Configuration', () => {
     it('should have correct callback URL configuration', () => {
-      const expectedCallbackUrl = 'http://localhost:3000/api/auth/callback/google';
+      const expectedCallbackUrl = 'http://localhost:3001/api/auth/callback/google';
       const baseUrl = process.env.NEXTAUTH_URL;
       const callbackUrl = `${baseUrl}/api/auth/callback/google`;
       

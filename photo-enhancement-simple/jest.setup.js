@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+require('@testing-library/jest-dom')
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -41,7 +41,7 @@ jest.mock('next-auth', () => ({
 
 // Mock environment variables
 process.env.NEXTAUTH_SECRET = 'test-secret'
-process.env.NEXTAUTH_URL = 'http://localhost:3000'
+process.env.NEXTAUTH_URL = 'http://localhost:3001'
 process.env.GOOGLE_CLIENT_ID = 'test-google-client-id'
 process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret'
 

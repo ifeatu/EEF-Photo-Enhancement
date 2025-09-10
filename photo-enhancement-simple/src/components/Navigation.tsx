@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { Suspense } from "react";
+import AdminNavLink from "./AdminNavLink";
 
 export default function Navigation() {
   const { data: session } = useSession();
@@ -36,14 +38,9 @@ export default function Navigation() {
                 >
                   Pricing
                 </Link>
-                {(session.user as any)?.role === 'ADMIN' && (
-                  <Link
-                    href="/admin"
-                    className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Admin
-                  </Link>
-                )}
+                <Suspense fallback={null}>
+                  <AdminNavLink />
+                </Suspense>
                 <Link
                   href="/api/auth/signout"
                   className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium"

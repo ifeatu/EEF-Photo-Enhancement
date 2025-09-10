@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from './auth'
 import { prisma } from './prisma'
+import { authOptions } from './auth'
 import type { Session } from 'next-auth'
 
 export interface ExtendedSession extends Session {

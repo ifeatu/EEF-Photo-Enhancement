@@ -25,7 +25,7 @@ async function testEnhancementAPI() {
     console.log('🔄 Making API call to enhancement endpoint...');
     
     // Make API call to the enhancement endpoint
-    const response = await fetch('http://localhost:3000/api/photos/enhance', {
+    const response = await fetch('http://localhost:3001/api/photos/enhance', {
       method: 'POST',
       body: formData,
       headers: {

@@ -10,7 +10,7 @@ if (typeof global.TextDecoder === 'undefined') {
 // Mock environment variables
 process.env.GOOGLE_AI_API_KEY = 'test-api-key';
 process.env.NEXTAUTH_SECRET = 'test-secret';
-process.env.NEXTAUTH_URL = 'http://localhost:3000';
+process.env.NEXTAUTH_URL = 'http://localhost:3001';
 process.env.BLOB_READ_WRITE_TOKEN = 'test-blob-token';
 
 // Mock console methods to reduce noise in tests

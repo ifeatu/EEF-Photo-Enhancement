@@ -43,15 +43,36 @@ export const authOptions: any = {
       if (session?.user && token?.sub) {
         session.user.id = token.sub;
         
-        // Fetch user role from database
-        const user = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { role: true }
-        });
+        // Fetch user role from database with retry logic to handle race conditions
+        let retries = 3;
+        let user = null;
         
-        if (user) {
-          session.user.role = user.role;
+        while (retries > 0 && !user) {
+          try {
+            user = await prisma.user.findUnique({
+              where: { id: token.sub },
+              select: { role: true, credits: true }
+            });
+            
+            if (!user && retries > 1) {
+              // Wait before retry to allow database transaction to complete
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            retries--;
+          } catch (error) {
+            console.error('Error fetching user role (attempt ' + (4 - retries) + '):', error);
+            retries--;
+            if (retries > 0) {
+              // Wait before retry on database error
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }
         }
+        
+        // Set user role and credits, defaulting to USER role if not found
+        session.user.role = user?.role || 'USER';
+        session.user.credits = user?.credits || 3;
       }
       return session;
     },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth-utils'
+import { withAuth } from '@/lib/api-auth'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!.trim(), {
@@ -45,12 +45,8 @@ const subscriptionTiers = {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, user) => {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const { planId, type } = await request.json()
 
@@ -85,7 +81,7 @@ export async function POST(request: NextRequest) {
         success_url: `${process.env.NEXTAUTH_URL?.trim()}/dashboard?success=true&credits=${plan.credits}`,
         cancel_url: `${process.env.NEXTAUTH_URL?.trim()}/pricing?canceled=true`,
         metadata: {
-          userId: user.user.id,
+          userId: user.id,
           type: 'credits',
           planId,
           credits: plan.credits.toString(),
@@ -109,7 +105,7 @@ export async function POST(request: NextRequest) {
         success_url: `${process.env.NEXTAUTH_URL?.trim()}/dashboard?success=true&subscription=${planId}`,
         cancel_url: `${process.env.NEXTAUTH_URL?.trim()}/pricing?canceled=true`,
         metadata: {
-          userId: user.user.id,
+          userId: user.id,
           type: 'subscription',
           planId,
           monthlyCredits: plan.monthlyCredits.toString(),
@@ -129,4 +125,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

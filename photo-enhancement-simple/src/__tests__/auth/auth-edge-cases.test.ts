@@ -113,7 +113,7 @@ describe('Authentication Edge Cases', () => {
     });
 
     it('should handle callback URL validation', () => {
-      const expectedCallbackUrl = 'http://localhost:3000/api/auth/callback/google';
+      const expectedCallbackUrl = 'http://localhost:3001/api/auth/callback/google';
       expect(process.env.NEXTAUTH_URL).toBeDefined();
       
       // Verify the base URL is correct for callback construction

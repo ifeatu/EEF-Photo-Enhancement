@@ -2,28 +2,29 @@ import { POST } from '../route';
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { prisma } from '@/lib/prisma';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// Dynamic import for Google AI to avoid build-time evaluation
 import { put } from '@vercel/blob';
 
 // Mock dependencies
 jest.mock('next-auth/next');
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    photo: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-    user: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
+const mockPrisma = {
+  photo: {
+    findUnique: jest.fn(),
+    update: jest.fn(),
   },
+  user: {
+    findUnique: jest.fn(),
+    update: jest.fn(),
+  },
+};
+
+jest.mock('@/lib/prisma', () => ({
+  prisma: mockPrisma,
 }));
-jest.mock('@google/generative-ai');
+// Mock will be set up dynamically
 jest.mock('@vercel/blob');
 
 const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 const mockPut = put as jest.MockedFunction<typeof put>;
 
 // Mock fetch globally
@@ -42,7 +43,7 @@ describe('/api/photos/enhance', () => {
   it('should require authentication', async () => {
     mockGetServerSession.mockResolvedValue(null);
 
-    const request = new NextRequest('http://localhost:3000/api/photos/enhance', {
+    const request = new NextRequest('http://localhost:3001/api/photos/enhance', {
       method: 'POST',
       body: JSON.stringify({ photoId: 'test-photo-id' }),
     });
@@ -59,7 +60,7 @@ describe('/api/photos/enhance', () => {
       user: { id: 'user-1', email: 'test@example.com' },
     } as any);
 
-    const request = new NextRequest('http://localhost:3000/api/photos/enhance', {
+    const request = new NextRequest('http://localhost:3001/api/photos/enhance', {
       method: 'POST',
       body: JSON.stringify({}),
     });
@@ -76,9 +77,9 @@ describe('/api/photos/enhance', () => {
       user: { id: 'user-1', email: 'test@example.com' },
     } as any);
 
-    mockPrisma.photo.findUnique.mockResolvedValue(null);
+    (mockPrisma.photo.findUnique as jest.Mock).mockResolvedValue(null);
 
-    const request = new NextRequest('http://localhost:3000/api/photos/enhance', {
+    const request = new NextRequest('http://localhost:3001/api/photos/enhance', {
       method: 'POST',
       body: JSON.stringify({ photoId: 'non-existent-photo' }),
     });
@@ -103,14 +104,14 @@ describe('/api/photos/enhance', () => {
       originalUrl: 'https://example.com/photo.jpg',
       status: 'uploaded',
     };
-    mockPrisma.photo.findUnique.mockResolvedValue(mockPhoto as any);
+    (mockPrisma.photo.findUnique as jest.Mock).mockResolvedValue(mockPhoto as any);
 
     // Mock user data
     const mockUser = {
       id: 'user-1',
       credits: 10,
     };
-    mockPrisma.user.findUnique.mockResolvedValue(mockUser as any);
+    (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser as any);
 
     // Mock fetch for image download
     const mockImageBuffer = Buffer.from('fake-image-data');
@@ -143,9 +144,7 @@ describe('/api/photos/enhance', () => {
       getGenerativeModel: jest.fn().mockReturnValue(mockModel),
     };
 
-    (GoogleGenerativeAI as jest.MockedClass<typeof GoogleGenerativeAI>).mockImplementation(
-      () => mockGenAI as any
-    );
+    // Mock will be set up dynamically in each test
 
     // Mock Vercel Blob upload
     mockPut.mockResolvedValue({
@@ -153,18 +152,18 @@ describe('/api/photos/enhance', () => {
     } as any);
 
     // Mock database updates
-    mockPrisma.photo.update.mockResolvedValue({
+    (mockPrisma.photo.update as jest.Mock).mockResolvedValue({
       ...mockPhoto,
       enhancedUrl: 'https://blob.vercel-storage.com/enhanced_123456789.png',
       status: 'enhanced',
     } as any);
 
-    mockPrisma.user.update.mockResolvedValue({
+    (mockPrisma.user.update as jest.Mock).mockResolvedValue({
       ...mockUser,
       credits: 9,
     } as any);
 
-    const request = new NextRequest('http://localhost:3000/api/photos/enhance', {
+    const request = new NextRequest('http://localhost:3001/api/photos/enhance', {
       method: 'POST',
       body: JSON.stringify({ photoId: 'photo-1' }),
     });
@@ -205,15 +204,15 @@ describe('/api/photos/enhance', () => {
       originalUrl: 'https://example.com/photo.jpg',
       status: 'uploaded',
     };
-    mockPrisma.photo.findUnique.mockResolvedValue(mockPhoto as any);
+    (mockPrisma.photo.findUnique as jest.Mock).mockResolvedValue(mockPhoto as any);
 
     const mockUser = {
       id: 'user-1',
       credits: 0, // No credits
     };
-    mockPrisma.user.findUnique.mockResolvedValue(mockUser as any);
+    (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser as any);
 
-    const request = new NextRequest('http://localhost:3000/api/photos/enhance', {
+    const request = new NextRequest('http://localhost:3001/api/photos/enhance', {
       method: 'POST',
       body: JSON.stringify({ photoId: 'photo-1' }),
     });

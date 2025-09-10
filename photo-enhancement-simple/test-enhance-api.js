@@ -5,7 +5,7 @@ async function testEnhanceAPI() {
     console.log('Testing enhancement API...');
     
     // Test the enhancement endpoint
-    const response = await fetch('http://localhost:3000/api/photos/enhance', {
+    const response = await fetch('http://localhost:3001/api/photos/enhance', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

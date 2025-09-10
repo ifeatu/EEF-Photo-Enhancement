@@ -127,7 +127,7 @@ npx playwright test upload.e2e.test.ts
 ### Playwright Configuration
 - **Config file**: `playwright.config.ts`
 - **Browsers**: Chromium, Firefox, WebKit
-- **Base URL**: http://localhost:3000
+- **Base URL**: http://localhost:3001
 - **Auto-start dev server**: Yes
 
 ## Test Data and Fixtures

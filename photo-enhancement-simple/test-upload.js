@@ -14,7 +14,7 @@ async function testUpload() {
     formData.append('photo', file);
     formData.append('title', 'Test Upload');
     
-    const response = await fetch('http://localhost:3000/api/photos/upload', {
+    const response = await fetch('http://localhost:3001/api/photos/upload', {
       method: 'POST',
       body: formData,
       headers: {

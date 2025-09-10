@@ -20,9 +20,6 @@ async function testNanoBananaIntegration() {
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-    
-    console.log('✅ Gemini AI model initialized');
-    
     // Use an actual before photo from the photos directory
     const photoPath = path.join(__dirname, '..', 'photos', 'photo-1-before.jpg');
     const testImageBuffer = fs.readFileSync(photoPath);
