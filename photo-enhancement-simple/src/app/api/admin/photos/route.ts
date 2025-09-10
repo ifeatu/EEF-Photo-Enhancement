@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause for status filter
     const whereClause = status
-      ? { status: status.toUpperCase() }
+      ? { status: status.toUpperCase() as any }
       : {}
 
     // Get photos with pagination

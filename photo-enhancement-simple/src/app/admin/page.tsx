@@ -58,7 +58,12 @@ export default async function AdminPage() {
           }
         }
       }
-    }),
+    }).then((transactions: any[]) => 
+      transactions.map((transaction: any) => ({
+        ...transaction,
+        amountPaid: Number(transaction.amountPaid)
+      }))
+    ),
     
     // System statistics
     Promise.all([
@@ -77,7 +82,7 @@ export default async function AdminPage() {
       totalTransactions,
       completedPhotos,
       failedPhotos,
-      totalRevenue: revenue._sum.amountPaid || 0,
+      totalRevenue: Number(revenue._sum.amountPaid) || 0,
     }))
   ])
 

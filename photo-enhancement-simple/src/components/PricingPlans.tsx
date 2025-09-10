@@ -97,7 +97,7 @@ const subscriptionTiers = [
     id: 'enterprise',
     name: 'Enterprise',
     monthlyCredits: 500,
-    price: 299.99,
+    price: 199.99,
     description: 'For teams and large organizations',
     features: [
       '500 credits per month',
@@ -278,10 +278,10 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 mb-2">Can I cancel my subscription?</h3>
-            <p className="text-gray-600">Yes, you can cancel anytime. You'll keep your remaining credits until they're used.</p>
+            <p className="text-gray-600">Yes, you can cancel anytime. You&apos;ll keep your remaining credits until they&apos;re used.</p>
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 mb-2">What's the difference in quality?</h3>
+            <h3 className="font-semibold text-gray-900 mb-2">What&apos;s the difference in quality?</h3>
             <p className="text-gray-600">All plans use the same high-quality AI. Higher tiers get priority processing and additional features.</p>
           </div>
           <div>

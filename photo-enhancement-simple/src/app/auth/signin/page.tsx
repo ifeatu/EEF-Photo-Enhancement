@@ -1,7 +1,7 @@
 'use client';
 
 import { signIn, getProviders } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Provider {
@@ -12,7 +12,7 @@ interface Provider {
   callbackUrl: string;
 }
 
-export default function SignIn() {
+function SignInContent() {
   const [providers, setProviders] = useState<Record<string, Provider> | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -103,5 +103,17 @@ export default function SignIn() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }

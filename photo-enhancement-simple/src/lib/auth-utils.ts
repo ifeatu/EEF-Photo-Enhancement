@@ -46,8 +46,8 @@ export async function getCurrentUser(): Promise<ExtendedSession | null> {
     user: {
       id: user.id,
       email: user.email,
-      name: user.name,
-      image: user.image,
+      name: user.name || undefined,
+      image: user.image || undefined,
       role: user.role,
       credits: user.credits,
     }

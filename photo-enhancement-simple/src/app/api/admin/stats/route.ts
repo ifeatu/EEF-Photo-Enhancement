@@ -21,15 +21,15 @@ export async function GET(request: NextRequest) {
       // Total photos count
       prisma.photo.count(),
       
-      // Total credits used (sum of all transactions)
+      // Total credits purchased (sum of all transactions)
       prisma.transaction.aggregate({
         _sum: {
-          creditsUsed: true,
+          creditsPurchased: true,
         },
         where: {
           status: 'COMPLETED',
         },
-      }).then((result: any) => result._sum.creditsUsed || 0),
+      }).then((result: any) => result._sum.creditsPurchased || 0),
       
       // Recent activity (last 10 activities)
       prisma.photo.findMany({

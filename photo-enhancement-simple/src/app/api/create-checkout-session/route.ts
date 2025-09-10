@@ -40,7 +40,7 @@ const subscriptionTiers = {
   enterprise: {
     name: 'Enterprise',
     monthlyCredits: 500,
-    price: 29999, // $299.99 in cents
+    price: 19999, // $199.99 in cents
     stripePriceId: process.env.STRIPE_ENTERPRISE_PRICE_ID,
   }
 }
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true&credits=${plan.credits}`,
         cancel_url: `${process.env.NEXTAUTH_URL}/pricing?canceled=true`,
         metadata: {
-          userId: user.id!,
+          userId: user.user.id,
           type: 'credits',
           planId,
           credits: plan.credits.toString(),
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true&subscription=${planId}`,
         cancel_url: `${process.env.NEXTAUTH_URL}/pricing?canceled=true`,
         metadata: {
-          userId: user.id!,
+          userId: user.user.id,
           type: 'subscription',
           planId,
           monthlyCredits: plan.monthlyCredits.toString(),

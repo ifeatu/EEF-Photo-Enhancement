@@ -127,11 +127,9 @@ export function usePerformanceMonitor(componentName: string) {
       errorCount: (prev.errorCount || 0) + 1
     }));
 
-    logger.error('Component error tracked', {
-      error: error.message,
+    logger.error('Component error tracked', error, {
       context,
-      component: componentName,
-      stack: error.stack
+      component: componentName
     });
   }, [componentName]);
 

@@ -22,7 +22,7 @@ export default async function PricingPage() {
         </div>
         
         <div className="mt-12">
-          <PricingPlans currentUser={user} />
+          <PricingPlans currentUser={user.user} />
         </div>
       </div>
     </div>
