@@ -209,7 +209,7 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   
   // Check if this is an internal service call from cron or upload service
   const internalServiceHeader = request.headers.get('x-internal-service');
-  const isInternalService = internalServiceHeader === 'cron-processor' || internalServiceHeader === 'upload-service';
+  const isInternalService = internalServiceHeader === 'cron-processor' || internalServiceHeader === 'upload-service' || internalServiceHeader === 'legacy-cleanup';
   
   if (isInternalService) {
     // For internal service calls, get userId from header or from photo record
