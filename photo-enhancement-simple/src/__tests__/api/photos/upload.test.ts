@@ -5,7 +5,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { prisma } from '@/lib/prisma';
-import { NextRequest } from 'next/server';
+// NextRequest import removed as it's not used;
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 

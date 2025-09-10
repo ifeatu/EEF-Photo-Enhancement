@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import { authOptions } from '../../lib/auth';
 import { JWT } from 'next-auth/jwt';
 

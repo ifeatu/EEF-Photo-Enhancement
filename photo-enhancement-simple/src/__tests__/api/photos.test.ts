@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
-import { NextRequest } from 'next/server'
+// NextRequest import removed as it's not used
 
 // Mock the auth function
 const mockAuth = jest.fn() as jest.MockedFunction<any>

@@ -28,10 +28,11 @@ jest.mock('fs/promises', () => ({
   mkdir: jest.fn(),
 }));
 
+import { getServerSession } from 'next-auth/next';
+import { prisma } from '@/lib/prisma';
+import { writeFile, mkdir } from 'fs/promises';
+
 describe('Upload Integration Tests', () => {
-  const { getServerSession } = require('next-auth/next');
-  const { prisma } = require('@/lib/prisma');
-  const { writeFile, mkdir } = require('fs/promises');
 
   beforeEach(() => {
     jest.clearAllMocks();

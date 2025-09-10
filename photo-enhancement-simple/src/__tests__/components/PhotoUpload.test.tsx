@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react'
-import { jest } from '@jest/globals'
 
 // Simple component test without complex dependencies
 function MockPhotoUploadComponent() {

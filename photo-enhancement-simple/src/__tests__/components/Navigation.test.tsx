@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { jest } from '@jest/globals'
+import Link from 'next/link'
 
-// Mock Next.js Link component
+// Mock next/link
 jest.mock('next/link', () => {
-  return function MockLink({ children, href, className, ...props }: any) {
+  return function Link({ children, href, ...props }: any) {
     return (
-      <a href={href} className={className} {...props}>
+      <a href={href} {...props}>
         {children}
       </a>
     )
@@ -19,9 +19,9 @@ function MockNavigation({ session }: { session: any }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <a href="/" className="text-2xl font-bold text-gray-900">
+            <Link href="/" className="text-2xl font-bold text-gray-900">
               PhotoEnhance
-            </a>
+            </Link>
           </div>
           <div className="flex items-center space-x-4">
             {session ? (
@@ -32,29 +32,29 @@ function MockNavigation({ session }: { session: any }) {
                 >
                   Dashboard
                 </a>
-                <a
+                <Link
                   href="/api/auth/signout"
                   className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium"
                 >
                   Sign Out
-                </a>
+                </Link>
               </>
             ) : (
               <>
-                <a
+                <Link
                   href="/api/auth/signin"
                   className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
                   data-testid="signin-button"
                 >
                   Sign In
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/api/auth/signin"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
                   data-testid="get-started-button"
                 >
                   Get Started
-                </a>
+                </Link>
               </>
             )}
           </div>

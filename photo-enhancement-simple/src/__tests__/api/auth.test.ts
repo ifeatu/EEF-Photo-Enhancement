@@ -5,11 +5,12 @@
  * rather than NextAuth internals to avoid ES module conflicts
  */
 
+import fs from 'fs'
+import path from 'path'
+
 describe('/api/auth/[...nextauth] Route Structure', () => {
   it('should have the correct file structure', () => {
     // Test that the route file exists and has the expected structure
-    const fs = require('fs')
-    const path = require('path')
     
     const routePath = path.join(process.cwd(), 'src/app/api/auth/[...nextauth]/route.ts')
     expect(fs.existsSync(routePath)).toBe(true)
@@ -20,8 +21,6 @@ describe('/api/auth/[...nextauth] Route Structure', () => {
   })
 
   it('should have auth configuration file', () => {
-    const fs = require('fs')
-    const path = require('path')
     
     const authPath = path.join(process.cwd(), 'src/lib/auth.ts')
     expect(fs.existsSync(authPath)).toBe(true)

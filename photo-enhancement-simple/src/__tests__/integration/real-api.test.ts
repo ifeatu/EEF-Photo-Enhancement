@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
-import { NextRequest } from 'next/server'
+import fetch from 'node-fetch'
 
 // Polyfill fetch for Node.js environment
 if (!global.fetch) {
-  global.fetch = require('node-fetch')
+  global.fetch = fetch as any
 }
 
 // Real API integration tests - requires running backend server
@@ -11,10 +11,9 @@ if (!global.fetch) {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'
 const TEST_USER_EMAIL = 'integration-test@example.com'
-const TEST_USER_PASSWORD = 'TestPassword123!'
 
-let authToken: string | null = null
-let testUserId: string | null = null
+const authToken: string | null = null
+const testUserId: string | null = null
 let testPhotoId: string | null = null
 
 // Helper function to make authenticated API calls
