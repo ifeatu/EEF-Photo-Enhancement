@@ -36,6 +36,8 @@ export const authOptions: any = {
   },
   // Ensure environment variables are properly trimmed
   secret: process.env.NEXTAUTH_SECRET?.trim(),
+  // Explicitly set the base URL to force custom domain usage
+  url: process.env.NEXTAUTH_URL?.trim(),
   callbacks: {
     session: async ({ session, token }: any) => {
       if (session?.user && token?.sub) {
@@ -58,6 +60,23 @@ export const authOptions: any = {
         token.uid = user.id;
       }
       return token;
+    },
+    redirect: async ({ url, baseUrl }: any) => {
+      // Force redirect to use custom domain instead of Vercel auto-generated URL
+      const customDomain = process.env.NEXTAUTH_URL || baseUrl;
+      
+      // If url is relative, prepend custom domain
+      if (url.startsWith('/')) {
+        return `${customDomain}${url}`;
+      }
+      
+      // If url is on the same origin as custom domain, allow it
+      if (new URL(url).origin === new URL(customDomain).origin) {
+        return url;
+      }
+      
+      // Default to custom domain for all other cases
+      return customDomain;
     },
   },
   // Using default NextAuth signin page
