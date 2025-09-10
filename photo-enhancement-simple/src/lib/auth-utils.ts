@@ -15,42 +15,51 @@ export interface ExtendedSession extends Session {
 }
 
 /**
- * Get the current user session with role information
+ * Get the current user session with extended user data
  */
 export async function getCurrentUser(): Promise<ExtendedSession | null> {
-  const session = await getServerSession(authOptions) as Session | null
-  
-  if (!session?.user?.id) {
-    return null
-  }
-
-  // Fetch user with role from database
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      image: true,
-      role: true,
-      credits: true,
+  try {
+    const session = await getServerSession(authOptions) as Session | null
+    
+    if (!session?.user?.id) {
+      return null
     }
-  })
 
-  if (!user) {
-    return null
-  }
+    // Get full user data with role and credits
+    const user = await prisma.user.findUnique({
+      where: {
+        id: session.user.id
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        image: true,
+        role: true,
+        credits: true,
+      }
+    })
 
-  return {
-    ...session,
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name || undefined,
-      image: user.image || undefined,
-      role: user.role,
-      credits: user.credits,
+    if (!user) {
+      console.warn(`User not found in database: ${session.user.id}`)
+      return null
     }
+
+    return {
+      ...session,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || undefined,
+        image: user.image || undefined,
+        role: user.role,
+        credits: user.credits,
+      }
+    }
+  } catch (error) {
+    console.error('Error in getCurrentUser:', error)
+    // Return null instead of throwing to prevent 500 errors
+    return null
   }
 }
 
