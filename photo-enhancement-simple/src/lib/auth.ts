@@ -18,6 +18,7 @@ function getProviders() {
         GoogleProvider({
           clientId: process.env.GOOGLE_CLIENT_ID?.trim(),
           clientSecret: process.env.GOOGLE_CLIENT_SECRET?.trim(),
+          allowDangerousEmailAccountLinking: true,
         })
       );
     }
@@ -39,6 +40,21 @@ export const authOptions: any = {
   // Explicitly set the base URL to force custom domain usage
   url: process.env.NEXTAUTH_URL?.trim(),
   callbacks: {
+    signIn: async ({ user, account, profile, email, credentials }: any) => {
+      // Allow all sign-ins, including account linking
+      // The allowDangerousEmailAccountLinking option handles the linking
+      try {
+        console.log('SignIn attempt:', {
+          provider: account?.provider,
+          email: user?.email || email,
+          userId: user?.id
+        });
+        return true;
+      } catch (error) {
+        console.error('SignIn callback error:', error);
+        return true; // Still allow sign-in even if logging fails
+      }
+    },
     session: async ({ session, token }: any) => {
       if (session?.user && token?.sub) {
         session.user.id = token.sub;
