@@ -28,7 +28,7 @@ async function getGeminiModel() {
   // Dynamic import to avoid build-time evaluation issues on Vercel
   const { GoogleGenerativeAI } = await import('@google/generative-ai');
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY.trim());
-  return genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image-preview' });
+  return genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 }
 
 // Configuration constants
@@ -205,17 +205,47 @@ function isValidEnhanceRequest(data: unknown): data is EnhanceRequest {
 }
 
 export const POST = withApiHandler(async (request: NextRequest) => {
-  // Authenticate user using standardized auth
-  const authResult = await requireAuth();
-  if (!authResult.success || !authResult.user) {
-    throw new AuthenticationError();
-  }
+  let userId: string;
   
-  const userId = authResult.user.id;
+  // Check if this is an internal service call from cron or upload service
+  const internalServiceHeader = request.headers.get('x-internal-service');
+  const isInternalService = internalServiceHeader === 'cron-processor' || internalServiceHeader === 'upload-service';
+  
+  if (isInternalService) {
+    // For internal service calls, get userId from header or from photo record
+    const userIdHeader = request.headers.get('x-user-id');
+    if (userIdHeader) {
+      userId = userIdHeader;
+    } else {
+      // If no user ID header, we'll get it from the photo record after validation
+      userId = 'temp'; // Temporary value, will be replaced below
+    }
+  } else {
+    // Authenticate user using standardized auth for regular requests
+    const authResult = await requireAuth();
+    if (!authResult.success || !authResult.user) {
+      throw new AuthenticationError();
+    }
+    userId = authResult.user.id;
+  }
 
   // Validate request body
   const body = await request.json();
   const { photoId } = validateRequest(body, isValidEnhanceRequest, 'Photo ID is required');
+
+  // For upload service calls, we need to get the userId from the photo record first
+  if (isInternalService && userId === 'temp') {
+    const photoForUserId = await prisma.photo.findUnique({
+      where: { id: photoId },
+      select: { userId: true }
+    });
+    
+    if (!photoForUserId) {
+      throw new NotFoundError('Photo not found');
+    }
+    
+    userId = photoForUserId.userId;
+  }
 
   // Get photo from database with proper error handling
   // Allow both PENDING and FAILED photos for retry functionality

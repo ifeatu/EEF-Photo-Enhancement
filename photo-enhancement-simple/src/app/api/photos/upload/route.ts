@@ -106,18 +106,27 @@ export const POST = withAuth(async (request: NextRequest, user) => {
         data: { credits: { decrement: 1 } },
       });
 
-      // Mark photo as pending for enhancement (will be processed separately)
+      // Immediately trigger enhancement processing
       try {
-        // Update photo status to pending for background processing
-        await prisma.photo.update({
-          where: { id: photo.id },
-          data: { status: 'PENDING' }
+        // Call the enhance API internally to process the photo immediately
+        const enhanceResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/photos/enhance`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Internal-Service': 'upload-service', // Internal service identifier
+          },
+          body: JSON.stringify({ photoId: photo.id }),
         });
-        
-        message = 'Photo uploaded successfully and queued for enhancement';
+
+        if (enhanceResponse.ok) {
+          message = 'Photo uploaded and enhancement completed successfully';
+        } else {
+          console.warn('Enhancement failed:', await enhanceResponse.text());
+          message = 'Photo uploaded but enhancement failed - will retry later';
+        }
       } catch (enhanceError) {
-        console.warn('Failed to queue photo for enhancement:', enhanceError);
-        message = 'Photo uploaded but enhancement queueing failed';
+        console.warn('Failed to trigger photo enhancement:', enhanceError);
+        message = 'Photo uploaded but enhancement failed - will retry later';
       }
     } else {
       // No credits available - photo uploaded but not processed
