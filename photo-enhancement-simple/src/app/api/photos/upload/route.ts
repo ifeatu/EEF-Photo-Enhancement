@@ -1,31 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import type { Session } from 'next-auth';
 import { put } from '@vercel/blob';
+import { withAuth } from '@/lib/api-auth';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, user) => {
   try {
-    const session = await getServerSession(authOptions) as Session | null;
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Check user credits
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    const userCredits = await prisma.user.findUnique({
+      where: { id: user.id },
       select: { credits: true }
     });
 
-    if (!user) {
+    if (!userCredits) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const hasCredits = user.credits >= 1;
+    const hasCredits = userCredits.credits >= 1;
 
     const formData = await request.formData();
     const file = formData.get('photo') as File;
@@ -65,7 +58,7 @@ export async function POST(request: NextRequest) {
     // Create photo record in database
     const photo = await prisma.photo.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         originalUrl: imageUrl,
         status: 'PENDING',
         title: formData.get('title') as string || file.name,
@@ -79,29 +72,22 @@ export async function POST(request: NextRequest) {
     if (hasCredits) {
       // Deduct credit and trigger enhancement
       await prisma.user.update({
-        where: { id: session.user.id },
+        where: { id: user.id },
         data: { credits: { decrement: 1 } },
       });
 
-      // Automatically trigger enhancement after upload
+      // Mark photo as pending for enhancement (will be processed separately)
       try {
-        // Call the enhancement API in the background
-        const enhanceResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/photos/enhance`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cookie': request.headers.get('cookie') || '',
-          },
-          body: JSON.stringify({ photoId: photo.id }),
+        // Update photo status to pending for background processing
+        await prisma.photo.update({
+          where: { id: photo.id },
+          data: { status: 'PENDING' }
         });
         
-        if (!enhanceResponse.ok) {
-          console.warn('Auto-enhancement failed, photo will remain pending:', await enhanceResponse.text());
-        } else {
-          message = 'Photo uploaded successfully and enhancement started automatically';
-        }
+        message = 'Photo uploaded successfully and queued for enhancement';
       } catch (enhanceError) {
-        console.warn('Auto-enhancement failed, photo will remain pending:', enhanceError);
+        console.warn('Failed to queue photo for enhancement:', enhanceError);
+        message = 'Photo uploaded but enhancement queueing failed';
       }
     } else {
       // No credits available - photo uploaded but not processed
@@ -113,12 +99,29 @@ export async function POST(request: NextRequest) {
       photoId: photo.id,
       message,
       needsUpgrade,
-      creditsRemaining: hasCredits ? user.credits - 1 : user.credits,
+      creditsRemaining: hasCredits ? userCredits.credits - 1 : userCredits.credits,
       upgradeUrl: '/pricing'
     });
 
-  } catch (error) {
-    console.error('Photo upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Photo upload error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+      name: error.name
+    });
+    
+    // Return more specific error information in development
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? `Upload failed: ${error.message}` 
+      : 'Upload failed';
+      
+    return NextResponse.json({ 
+      error: errorMessage,
+      ...(process.env.NODE_ENV === 'development' && { 
+        details: error.message,
+        code: error.code 
+      })
+    }, { status: 500 });
   }
-}
+})
