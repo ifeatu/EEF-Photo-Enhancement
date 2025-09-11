@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "cd photo-enhancement-simple && npm install && npm run build",
   "outputDirectory": "photo-enhancement-simple/.next",
-  "installCommand": "npm install",
+  "installCommand": "cd photo-enhancement-simple && npm install",
   "framework": "nextjs"
 }
