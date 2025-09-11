@@ -52,14 +52,15 @@ export const POST = withAuth(async (request: NextRequest, user) => {
   addBreadcrumb('Upload started', 'upload', { userId: user.id, traceId: trace.getTraceId() });
   
   try {
-    // Check user credits
+    // Check user credits and role
     const creditsSpan = trace.createSpan('check-user-credits', { userId: user.id });
     addBreadcrumb('Checking user credits', 'upload');
     const userCredits = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { credits: true }
+      select: { credits: true, role: true }
     });
     creditsSpan.addMetadata('credits', userCredits?.credits || 0);
+    creditsSpan.addMetadata('role', userCredits?.role || 'USER');
     creditsSpan.finish();
 
     if (!userCredits) {
@@ -69,7 +70,9 @@ export const POST = withAuth(async (request: NextRequest, user) => {
       return createErrorResponse('User not found', 404);
     }
 
-    const hasCredits = userCredits.credits >= 1;
+    // Admin users with unlimited credits always have credits
+    const isAdminWithUnlimitedCredits = userCredits.role === 'ADMIN' && userCredits.credits >= 999999;
+    const hasCredits = isAdminWithUnlimitedCredits || userCredits.credits >= 1;
     
     if (!hasCredits) {
       const processingTime = Date.now() - startTime;
@@ -271,17 +274,21 @@ export const POST = withAuth(async (request: NextRequest, user) => {
     let needsUpgrade = false;
 
     if (hasCredits) {
-      // Deduct credit and trigger enhancement
-      addBreadcrumb('Deducting user credit', 'upload', { userId: user.id });
-      try {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { credits: { decrement: 1 } },
-        });
-      } catch (creditError: any) {
-        console.error('Failed to deduct user credit:', creditError);
-        // Continue without failing the upload, but log the error
-        console.warn('Photo uploaded but credit deduction failed');
+      // Deduct credit (skip for admin users with unlimited credits)
+      if (!isAdminWithUnlimitedCredits) {
+        addBreadcrumb('Deducting user credit', 'upload', { userId: user.id });
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { credits: { decrement: 1 } },
+          });
+        } catch (creditError: any) {
+          console.error('Failed to deduct user credit:', creditError);
+          // Continue without failing the upload, but log the error
+          console.warn('Photo uploaded but credit deduction failed');
+        }
+      } else {
+        addBreadcrumb('Credit deduction skipped for admin user', 'upload', { userId: user.id });
       }
 
       // Immediately trigger enhancement processing

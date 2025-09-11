@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-09-11T17:29:21.319Z",
+  "productionUrl": "https://photoenhance-frontend-h84ca7miz-pierre-malbroughs-projects.vercel.app",
+  "serviceAccountId": "cmffolxyw00005cfklz847mt0",
+  "testResults": {
+    "healthCheck": true,
+    "photoRecord": {
+      "id": "cmffonucz00025cfki94txhxa",
+      "userId": "cmffolxyw00005cfklz847mt0",
+      "originalUrl": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      "enhancedUrl": null,
+      "status": "PENDING",
+      "title": "Test Enhancement Photo",
+      "description": "Test photo for production enhancement workflow",
+      "createdAt": "2025-09-11T17:29:20.934Z",
+      "updatedAt": "2025-09-11T17:29:20.934Z"
+    },
+    "enhancement": false,
+    "cleanup": true
+  },
+  "summary": {
+    "totalTests": 4,
+    "passed": 3,
+    "failed": 1
+  }
+}

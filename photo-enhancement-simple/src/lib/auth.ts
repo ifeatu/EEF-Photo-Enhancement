@@ -12,6 +12,54 @@ function getProviders() {
   }
   
   try {
+    // Add credentials provider for email/password authentication
+    const CredentialsProvider = require("next-auth/providers/credentials").default;
+    providers.push(
+      CredentialsProvider({
+        id: "credentials",
+        name: "Email and Password",
+        credentials: {
+          email: { 
+            label: "Email", 
+            type: "email", 
+            placeholder: "your@email.com" 
+          },
+          password: { 
+            label: "Password", 
+            type: "password" 
+          }
+        },
+        async authorize(credentials: any) {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          try {
+            const { authenticateWithPassword } = require('@/lib/user-management');
+            const result = await authenticateWithPassword(credentials.email, credentials.password);
+            
+            if (result.success && result.user) {
+              // Return user object for NextAuth
+              return {
+                id: result.user.id,
+                email: result.user.email,
+                name: result.user.name,
+                image: result.user.image,
+                role: result.user.role,
+                credits: result.user.credits
+              };
+            }
+            
+            return null;
+          } catch (error) {
+            console.error('Credentials authentication error:', error);
+            return null;
+          }
+        }
+      })
+    );
+
+    // Add Google OAuth provider
     if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       const GoogleProvider = require("next-auth/providers/google").default;
       providers.push(
@@ -24,6 +72,7 @@ function getProviders() {
     }
   } catch (error) {
     // Silent failure during build
+    console.error('Error loading authentication providers:', error);
   }
   
   return providers;
@@ -59,7 +108,7 @@ export const authOptions: any = {
       if (session?.user && token?.sub) {
         session.user.id = token.sub;
         
-        // Fetch user role from database with retry logic to handle race conditions
+        // Fetch user role and credits from database with retry logic
         let retries = 3;
         let user = null;
         
@@ -67,7 +116,7 @@ export const authOptions: any = {
           try {
             user = await prisma.user.findUnique({
               where: { id: token.sub },
-              select: { role: true, credits: true }
+              select: { role: true, credits: true, email: true }
             });
             
             if (!user && retries > 1) {
@@ -77,7 +126,7 @@ export const authOptions: any = {
             
             retries--;
           } catch (error) {
-            console.error('Error fetching user role (attempt ' + (4 - retries) + '):', error);
+            console.error('Error fetching user data (attempt ' + (4 - retries) + '):', error);
             retries--;
             if (retries > 0) {
               // Wait before retry on database error
@@ -86,9 +135,28 @@ export const authOptions: any = {
           }
         }
         
-        // Set user role and credits, defaulting to USER role if not found
+        // Set user role and credits
         session.user.role = user?.role || 'USER';
         session.user.credits = user?.credits || 3;
+        
+        // Ensure admin users have unlimited credits
+        if (session.user.role === 'ADMIN' && session.user.credits < 999999) {
+          try {
+            const { isAdminWithUnlimitedCredits } = require('@/lib/user-management');
+            const userObj = { role: session.user.role, credits: session.user.credits } as any;
+            
+            if (!isAdminWithUnlimitedCredits(userObj)) {
+              // Update admin user to have unlimited credits
+              await prisma.user.update({
+                where: { id: token.sub },
+                data: { credits: 999999 }
+              });
+              session.user.credits = 999999;
+            }
+          } catch (error) {
+            console.error('Error updating admin credits:', error);
+          }
+        }
       }
       return session;
     },

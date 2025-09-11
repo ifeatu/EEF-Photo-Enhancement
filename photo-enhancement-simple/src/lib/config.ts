@@ -8,7 +8,7 @@ export const APP_CONFIG = {
   DEV_PORT: 3000,
   
   // URL Configuration - Environment-aware
-  PROD_URL: process.env.NEXTAUTH_URL || 'https://your-app.vercel.app',
+  PROD_URL: process.env.NEXTAUTH_URL || 'https://photoenhance.dev',
   DEV_URL: 'http://localhost:3000', // STANDARDIZED from mixed 3000/3001
   
   // Environment Detection

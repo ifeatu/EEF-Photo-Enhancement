@@ -1,0 +1,17 @@
+{
+  "timestamp": "2025-09-11T17:27:13.672Z",
+  "productionUrl": "https://photoenhance-frontend-h84ca7miz-pierre-malbroughs-projects.vercel.app",
+  "testResults": {
+    "healthCheck": true,
+    "serviceAccount": true,
+    "photoUpload": false,
+    "photoEnhancement": false,
+    "photoDownload": false,
+    "cleanup": false
+  },
+  "summary": {
+    "totalTests": 6,
+    "passed": 2,
+    "failed": 4
+  }
+}

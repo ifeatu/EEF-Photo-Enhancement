@@ -48,6 +48,7 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  password      String?   // For credentials authentication
   credits       Int       @default(3)
   role          UserRole  @default(USER)
   subscriptionTier String? // 'free', 'basic', 'premium'

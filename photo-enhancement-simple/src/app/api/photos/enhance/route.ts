@@ -84,18 +84,19 @@ export async function POST(request: NextRequest) {
         return createCorsErrorResponse('Authentication required', 401, 'UNAUTHORIZED');
       }
       
-      // Get user ID from email
+      // Get user ID and role from email
       const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { id: true, credits: true }
+        select: { id: true, credits: true, role: true }
       });
       
       if (!user) {
         return createCorsErrorResponse('User not found', 404, 'USER_NOT_FOUND');
       }
       
-      // Check credits
-      if (user.credits <= 0) {
+      // Check credits (skip for admin users with unlimited credits)
+      const isAdminWithUnlimitedCredits = user.role === 'ADMIN' && user.credits >= 999999;
+      if (!isAdminWithUnlimitedCredits && user.credits <= 0) {
         return createCorsErrorResponse(
           'Insufficient credits. Please purchase more credits to continue.',
           402,
@@ -167,13 +168,25 @@ export async function POST(request: NextRequest) {
     
     console.log('Photo status updated to PROCESSING');
     
-    // Step 7: Deduct credit for non-internal requests
+    // Step 7: Deduct credit for non-internal requests (skip for admin users)
     if (!isInternal) {
-      await prisma.user.update({
+      // Get user to check admin status
+      const currentUser = await prisma.user.findUnique({
         where: { id: userId },
-        data: { credits: { decrement: 1 } }
+        select: { role: true, credits: true }
       });
-      console.log('Credit deducted for user', { userId });
+      
+      const isAdminWithUnlimitedCredits = currentUser?.role === 'ADMIN' && currentUser.credits >= 999999;
+      
+      if (!isAdminWithUnlimitedCredits) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { credits: { decrement: 1 } }
+        });
+        console.log('Credit deducted for user', { userId });
+      } else {
+        console.log('Credit deduction skipped for admin user', { userId });
+      }
     }
     
     // Step 8: Enhance photo with Gemini (core functionality)
