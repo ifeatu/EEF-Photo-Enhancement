@@ -3,6 +3,7 @@
 import { signIn, getProviders } from 'next-auth/react';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 interface Provider {
   id: string;
@@ -15,6 +16,10 @@ interface Provider {
 function SignInContent() {
   const [providers, setProviders] = useState<Record<string, Provider> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCredentialsForm, setShowCredentialsForm] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [credentialsLoading, setCredentialsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl') || '/';
@@ -34,6 +39,32 @@ function SignInContent() {
       await signIn(providerId, { callbackUrl });
     } catch (error) {
       console.error('Sign in error:', error);
+    }
+  };
+
+  const handleCredentialsSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCredentialsLoading(true);
+    
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        callbackUrl,
+        redirect: false
+      });
+      
+      if (result?.error) {
+        console.error('Credentials sign in error:', result.error);
+        // Error will be shown via URL params on refresh
+        router.push(`/auth/signin?error=CredentialsSignin&callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      } else if (result?.ok) {
+        router.push(callbackUrl);
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+    } finally {
+      setCredentialsLoading(false);
     }
   };
 
@@ -75,7 +106,8 @@ function SignInContent() {
         )}
 
         <div className="space-y-4">
-          {providers && Object.values(providers).map((provider) => (
+          {/* OAuth Providers */}
+          {providers && Object.values(providers).filter(p => p.id !== 'credentials').map((provider) => (
             <div key={provider.name}>
               <button
                 onClick={() => handleSignIn(provider.id)}
@@ -91,9 +123,87 @@ function SignInContent() {
               </button>
             </div>
           ))}
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-50 text-gray-500">Or</span>
+            </div>
+          </div>
+
+          {/* Credentials Sign In */}
+          {!showCredentialsForm ? (
+            <button
+              onClick={() => setShowCredentialsForm(true)}
+              className="group relative w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              Sign in with Email & Password
+            </button>
+          ) : (
+            <form onSubmit={handleCredentialsSignIn} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="Enter your password"
+                />
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  type="submit"
+                  disabled={credentialsLoading}
+                  className="flex-1 group relative flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 transition-colors"
+                >
+                  {credentialsLoading ? 'Signing in...' : 'Sign in'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCredentialsForm(false)}
+                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
-        <div className="text-center">
+        <div className="text-center space-y-3">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
+              Create one here
+            </Link>
+          </p>
+          
           <button
             onClick={() => router.push('/')}
             className="text-blue-600 hover:text-blue-500 text-sm font-medium"
