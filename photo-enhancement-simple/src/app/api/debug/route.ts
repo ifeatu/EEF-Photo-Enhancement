@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { withAuth, addSecurityHeaders, AuthenticatedRequest } from '@/lib/auth-middleware';
 import { AuthResult } from '@/lib/service-auth';
+import { withDebugEndpoint } from '@/lib/api-handler';
 import fs from 'fs';
 import path from 'path';
 
@@ -308,6 +309,8 @@ async function handleDebugRequest(request: AuthenticatedRequest): Promise<NextRe
   }
 }
 
-export const GET = withAuth(handleDebugRequest, {
+const authenticatedHandler = withAuth(handleDebugRequest, {
   requiredPermissions: ['debug:read']
 });
+
+export const GET = withDebugEndpoint(authenticatedHandler);

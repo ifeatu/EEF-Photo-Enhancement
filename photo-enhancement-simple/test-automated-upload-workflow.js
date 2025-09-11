@@ -9,8 +9,8 @@ const TEST_PHOTO_PATH = '../photos/photo-1-before.jpg';
 
 // Service account credentials from SERVICE_ACCOUNT_SETUP.md
 const SERVICE_CREDENTIALS = {
-  // Bearer token authentication
-  token: '675d027111dced8b0a6cd3e47beccd91272eef0960bd509f284d3408d61c6471',
+  // Service account token for automated testing (with sa_ prefix)
+  token: 'sa_6bd077611a57edbf1fb9ec066d6c356bbe3874f7de8b36190f2cf4370cb8031b',
   
   // Basic authentication
   username: 'ifeatu',

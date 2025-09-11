@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 
 class MonitoringSystemTester {
-  constructor(baseUrl = 'http://localhost:3000') {
+  constructor(baseUrl = 'http://localhost:3001') {
     this.baseUrl = baseUrl;
     this.testResults = [];
     this.authToken = null;
@@ -259,12 +259,16 @@ class MonitoringSystemTester {
   async testSecurityHeaders() {
     await this.log('\n=== SECURITY HEADERS TEST ===');
     
-    const response = await this.testEndpoint('GET', '/api/health');
+    // Test admin endpoint which should have security headers
+    const response = await this.testEndpoint('GET', '/api/admin');
     
     if (response.headers) {
       const securityHeaders = [
-        'x-correlation-id',
-        'x-trace-id'
+        'x-content-type-options',
+        'x-frame-options', 
+        'x-xss-protection',
+        'referrer-policy',
+        'cache-control'
       ];
       
       let presentHeaders = 0;
@@ -278,7 +282,7 @@ class MonitoringSystemTester {
       }
       
       await this.log(`Security headers: ${presentHeaders}/${securityHeaders.length} present`);
-      return presentHeaders >= 1;
+      return presentHeaders >= 3; // Require at least 3 security headers
     }
     
     return false;

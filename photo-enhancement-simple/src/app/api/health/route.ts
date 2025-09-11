@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { PrismaClient } from '@prisma/client';
 import { alertManager } from '@/lib/alerting';
+import { withHealthCheck } from '@/lib/api-handler';
 
 interface HealthCheck {
   status: 'healthy' | 'unhealthy' | 'degraded';
@@ -85,7 +86,7 @@ function checkStorage(): { status: 'healthy' | 'unhealthy'; error?: string } {
   }
 }
 
-export async function GET(request: NextRequest) {
+async function handleHealthCheck(request: NextRequest) {
   const startTime = Date.now();
   
   try {
@@ -177,3 +178,5 @@ export async function GET(request: NextRequest) {
     await prisma.$disconnect();
   }
 }
+
+export const GET = withHealthCheck(handleHealthCheck);

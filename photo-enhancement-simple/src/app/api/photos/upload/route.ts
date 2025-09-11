@@ -10,6 +10,7 @@ import { UploadMetrics } from '@/lib/metrics';
 import { captureUploadError, setSentryContext, addBreadcrumb } from '@/lib/sentry';
 import { tracer } from '@/lib/tracing';
 import { alertManager } from '@/lib/alerting';
+import { validateImageFile } from '@/lib/image-utils';
 
 // Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
@@ -93,6 +94,33 @@ export const POST = withAuth(async (request: NextRequest, user) => {
       logger.warn('Upload failed: no file provided', { userId: user.id, processingTime });
       addBreadcrumb('Upload failed - no file provided', 'upload', { userId: user.id });
       return createErrorResponse('No file provided', 400);
+    }
+
+    // Validate file type and size
+    const validationSpan = trace.createSpan('validate-file', {});
+    addBreadcrumb('Validating file type and size', 'upload');
+    const validation = validateImageFile(file);
+    validationSpan.addMetadata('valid', validation.valid);
+    if (!validation.valid) {
+      validationSpan.addMetadata('error', validation.error);
+    }
+    validationSpan.finish();
+    
+    if (!validation.valid) {
+      const processingTime = Date.now() - startTime;
+      logger.warn('Upload failed: file validation failed', { 
+        userId: user.id, 
+        processingTime, 
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        validationError: validation.error 
+      });
+      addBreadcrumb('Upload failed - file validation failed', 'upload', { 
+        userId: user.id, 
+        error: validation.error 
+      });
+      return createErrorResponse(validation.error || 'Invalid file', 400);
     }
 
     // Record upload start with file details

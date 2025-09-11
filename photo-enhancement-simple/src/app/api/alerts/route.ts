@@ -14,7 +14,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { alertManager } from '@/lib/alerting';
-import { logger } from '@/lib/logger';
+import { logger, getCorrelationId } from '@/lib/logger';
+import { withApiEndpoint } from '@/lib/api-handler';
 
 /**
  * GET /api/alerts
@@ -25,9 +26,9 @@ import { logger } from '@/lib/logger';
  * - Recent metrics
  * - System health
  */
-export async function GET(request: NextRequest) {
+async function handleGetAlerts(request: NextRequest) {
   try {
-    const correlationId = request.headers.get('x-correlation-id') || `alerts-${Date.now()}`;
+    const correlationId = getCorrelationId();
     
     logger.info('Alerting status requested', {
       correlationId,
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    const correlationId = request.headers.get('x-correlation-id') || `alerts-error-${Date.now()}`;
+    const correlationId = getCorrelationId();
     
     logger.error('Failed to get alerting status', {
       correlationId,
@@ -105,9 +106,9 @@ export async function GET(request: NextRequest) {
  * - resolve: Resolve a specific alert
  * - test: Test alert system functionality
  */
-export async function POST(request: NextRequest) {
+async function handlePostAlerts(request: NextRequest) {
   try {
-    const correlationId = request.headers.get('x-correlation-id') || `alerts-action-${Date.now()}`;
+    const correlationId = getCorrelationId();
     const body = await request.json();
     const { action, alertId, ruleId } = body;
 
@@ -194,7 +195,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    const correlationId = request.headers.get('x-correlation-id') || `alerts-action-error-${Date.now()}`;
+    const correlationId = getCorrelationId();
     
     logger.error('Failed to execute alert action', {
       correlationId,
@@ -218,7 +219,7 @@ export async function POST(request: NextRequest) {
  * 
  * Handle CORS preflight requests
  */
-export async function OPTIONS() {
+async function handleOptionsAlerts() {
   return new NextResponse(null, {
     status: 200,
     headers: {
@@ -228,3 +229,7 @@ export async function OPTIONS() {
     },
   });
 }
+
+export const GET = withApiEndpoint(handleGetAlerts, 'alerts_get');
+export const POST = withApiEndpoint(handlePostAlerts, 'alerts_post');
+export const OPTIONS = withApiEndpoint(handleOptionsAlerts, 'alerts_options');

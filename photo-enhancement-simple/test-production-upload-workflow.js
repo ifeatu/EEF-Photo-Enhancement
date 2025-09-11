@@ -3,7 +3,7 @@ const path = require('path');
 const FormData = require('form-data');
 
 // Test configuration
-const PRODUCTION_URL = 'https://photoenhance-frontend-bz1t6mwfb-pierre-malbroughs-projects.vercel.app';
+const PRODUCTION_URL = 'https://photoenhance.dev';
 const TEST_PHOTO_PATH = '../photos/photo-1-before.jpg'; // Use original photo for enhancement
 
 async function testProductionUploadWorkflow() {
@@ -31,7 +31,7 @@ async function testProductionUploadWorkflow() {
         
         // Step 3: Test authentication (should require login)
         console.log('🔐 Testing authentication requirement...');
-        const authTestResponse = await fetch(`${PRODUCTION_URL}/api/upload`, {
+        const authTestResponse = await fetch(`${PRODUCTION_URL}/api/photos/upload`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
