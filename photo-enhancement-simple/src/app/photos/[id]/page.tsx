@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Download, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import ProcessingOverlay from '@/components/ProcessingOverlay';
+import CompletionCelebration from '@/components/CompletionCelebration';
 
 interface Photo {
   id: string;
@@ -28,6 +30,8 @@ export default function PhotoDetailPage() {
   const [estimatedCompletion, setEstimatedCompletion] = useState<Date | null>(null);
   const [progress, setProgress] = useState(0);
   const [retrying, setRetrying] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [justCompleted, setJustCompleted] = useState(false);
 
   const photoId = params?.id as string;
 
@@ -41,8 +45,16 @@ export default function PhotoDetailPage() {
       }
       
       const newPhoto = data.photo;
+      const previousPhoto = photo;
       setPhoto(newPhoto);
       setError(null);
+
+      // Check if photo just completed
+      if (previousPhoto?.status !== 'COMPLETED' && newPhoto.status === 'COMPLETED' && newPhoto.enhancedUrl) {
+        setJustCompleted(true);
+        setShowCelebration(true);
+        setProgress(100);
+      }
       
       // Track processing start time and estimate completion
       if (newPhoto.status === 'PROCESSING' && !processingStartTime) {
@@ -80,10 +92,19 @@ export default function PhotoDetailPage() {
         const data = await response.json();
         
         if (response.ok) {
-          setPhoto(data.photo);
+          const previousPhoto = photo;
+          const newPhoto = data.photo;
+          setPhoto(newPhoto);
+          
+          // Check if photo just completed during polling
+          if (previousPhoto?.status !== 'COMPLETED' && newPhoto.status === 'COMPLETED' && newPhoto.enhancedUrl) {
+            setJustCompleted(true);
+            setShowCelebration(true);
+            setProgress(100);
+          }
           
           // Stop polling if photo is completed or failed
-          if (data.photo.status === 'COMPLETED' || data.photo.status === 'FAILED') {
+          if (newPhoto.status === 'COMPLETED' || newPhoto.status === 'FAILED') {
             clearInterval(interval);
             setPolling(false);
           }
@@ -318,26 +339,13 @@ export default function PhotoDetailPage() {
                 />
               </div>
               {!photo.enhancedUrl && photo.status === 'PROCESSING' && (
-                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                  <div className="text-center text-white max-w-sm mx-auto px-4">
-                    <RefreshCw className="h-12 w-12 animate-spin mx-auto mb-4" />
-                    <p className="text-lg font-medium mb-2">Enhancing your photo...</p>
-                    <p className="text-sm opacity-75 mb-4">
-                      {Math.round(progress)}% complete
-                      {estimatedCompletion && (
-                        <span className="block mt-1">
-                          Est. {Math.max(0, Math.round((estimatedCompletion.getTime() - new Date().getTime()) / 1000))}s remaining
-                        </span>
-                      )}
-                    </p>
-                    <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
-                      <div 
-                        className="bg-white h-2 rounded-full transition-all duration-500 ease-out"
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
+                <ProcessingOverlay
+                  progress={progress}
+                  estimatedTimeRemaining={estimatedCompletion ? estimatedCompletion.getTime() - new Date().getTime() : undefined}
+                  onComplete={() => {
+                    // This will be handled by polling, but we can add extra logic here if needed
+                  }}
+                />
               )}
             </div>
           )}
@@ -472,6 +480,28 @@ export default function PhotoDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Completion Celebration Modal */}
+      <CompletionCelebration
+        isVisible={showCelebration}
+        onClose={() => {
+          setShowCelebration(false);
+          setJustCompleted(false);
+        }}
+        onViewPhoto={() => {
+          setShowCelebration(false);
+          setJustCompleted(false);
+          setShowComparison(true);
+        }}
+        onDownload={() => {
+          if (photo?.enhancedUrl) {
+            handleDownload(photo.enhancedUrl, `enhanced-${photo.title || 'photo'}.jpg`);
+          }
+          setShowCelebration(false);
+          setJustCompleted(false);
+        }}
+        photoTitle={photo?.title}
+      />
     </div>
   );
 }

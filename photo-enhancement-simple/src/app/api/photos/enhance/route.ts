@@ -139,7 +139,8 @@ export async function POST(request: NextRequest) {
         originalUrl: true,
         status: true,
         userId: true,
-        createdAt: true
+        createdAt: true,
+        updatedAt: true
       }
     });
     
@@ -157,14 +158,27 @@ export async function POST(request: NextRequest) {
       originalUrl: photo.originalUrl.substring(0, 100) + '...'
     });
     
-    // Step 6: Update status to processing
-    await prisma.photo.update({
-      where: { id: photoId },
+    // Step 6: Atomic status update with optimistic locking
+    const statusUpdate = await prisma.photo.updateMany({
+      where: { 
+        id: photoId,
+        status: { in: ['PENDING', 'FAILED'] }, // Only update if in expected state
+        updatedAt: photo.updatedAt // Optimistic concurrency control
+      },
       data: { 
         status: 'PROCESSING',
         updatedAt: new Date()
       }
     });
+
+    // Verify the update actually occurred
+    if (statusUpdate.count === 0) {
+      return createCorsErrorResponse(
+        'Photo status has changed since request started - please refresh and try again',
+        409, // Conflict
+        'CONCURRENT_MODIFICATION'
+      );
+    }
     
     console.log('Photo status updated to PROCESSING');
     
@@ -201,14 +215,32 @@ export async function POST(request: NextRequest) {
       confidence: enhancementResult.analysisData.confidence
     });
     
-    // Step 9: Update photo with results
-    const updatedPhoto = await prisma.photo.update({
-      where: { id: photoId },
+    // Step 9: Atomic completion update with verification
+    const completionUpdate = await prisma.photo.updateMany({
+      where: { 
+        id: photoId,
+        status: 'PROCESSING' // Only complete if currently processing
+      },
       data: {
         enhancedUrl: enhancementResult.enhancedUrl,
         status: 'COMPLETED',
         updatedAt: new Date()
-      },
+      }
+    });
+
+    // Verify completion update succeeded
+    if (completionUpdate.count === 0) {
+      console.error('Failed to complete photo - status may have changed during processing');
+      return createCorsErrorResponse(
+        'Photo completion failed - status inconsistency detected',
+        409,
+        'COMPLETION_CONFLICT'
+      );
+    }
+
+    // Get updated photo for response
+    const updatedPhoto = await prisma.photo.findUnique({
+      where: { id: photoId },
       select: {
         id: true,
         enhancedUrl: true,
@@ -216,6 +248,14 @@ export async function POST(request: NextRequest) {
         updatedAt: true
       }
     });
+
+    if (!updatedPhoto) {
+      return createCorsErrorResponse(
+        'Photo not found after completion',
+        404,
+        'POST_COMPLETION_ERROR'
+      );
+    }
     
     const totalProcessingTime = Date.now() - processingStart;
     
@@ -258,17 +298,25 @@ export async function POST(request: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined
     });
     
-    // Update photo status to failed if we have a photo ID
+    // Atomic failure status update if we have a photo ID
     if (photoId) {
       try {
-        await prisma.photo.update({
-          where: { id: photoId },
+        const failureUpdate = await prisma.photo.updateMany({
+          where: { 
+            id: photoId,
+            status: 'PROCESSING' // Only fail if currently processing
+          },
           data: { 
             status: 'FAILED',
             updatedAt: new Date()
           }
         });
-        console.log('Photo status updated to FAILED', { photoId });
+        
+        if (failureUpdate.count > 0) {
+          console.log('Photo status updated to FAILED', { photoId });
+        } else {
+          console.warn('Could not update photo to FAILED - status may have changed', { photoId });
+        }
       } catch (dbError) {
         console.error('Failed to update photo status to FAILED', {
           photoId,
