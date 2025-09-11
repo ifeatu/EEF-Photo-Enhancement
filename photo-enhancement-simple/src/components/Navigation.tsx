@@ -38,6 +38,12 @@ export default function Navigation() {
                 >
                   Pricing
                 </Link>
+                <Link
+                  href="/support"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Support
+                </Link>
                 <Suspense fallback={null}>
                   <AdminNavLink />
                 </Suspense>
@@ -50,6 +56,12 @@ export default function Navigation() {
               </>
             ) : (
               <>
+                <Link
+                  href="/support"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Support
+                </Link>
                 <Link
                   href="/api/auth/signin"
                   className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"

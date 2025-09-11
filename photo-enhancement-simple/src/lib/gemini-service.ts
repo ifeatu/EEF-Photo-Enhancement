@@ -345,14 +345,14 @@ Keep everything exactly the same - just make it look like it was shot today with
         }
       }
       
-      // If no enhanced image, fallback to analysis-based enhancement message
-      console.warn('Gemini did not return enhanced image, using original with analysis');
-      return imageData.buffer;
+      // If no enhanced image, this is a failure - don't fallback to original
+      console.error('Gemini did not return enhanced image - enhancement failed');
+      throw new Error('Gemini failed to generate enhanced image - no enhanced content returned');
       
     } catch (error: any) {
       console.error('Gemini image enhancement failed:', error.message);
-      // Fallback to original image if enhancement fails
-      return imageData.buffer;
+      // Re-throw the error instead of falling back to original
+      throw error;
     }
   }
   
