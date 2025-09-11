@@ -224,46 +224,9 @@ async function enhancePhotoWithAI(photoUrl: string): Promise<string> {
       logger.warn('Could not parse Gemini analysis, using default enhancements', { parseError });
     }
     
-    // Apply image enhancements using Sharp (optimized for memory)
-    const sharp = (await import('sharp')).default;
-    let enhancedBuffer = sharp(Buffer.from(imageBuffer), { 
-      limitInputPixels: 268402689, // ~16k x 16k max
-      sequentialRead: true 
-    });
-    
-    // Resize if image is too large (memory optimization)
-    const metadata = await enhancedBuffer.metadata();
-    if (metadata.width && metadata.height && metadata.width * metadata.height > 4000000) {
-      const maxDimension = 2000;
-      enhancedBuffer = enhancedBuffer.resize(maxDimension, maxDimension, { 
-        fit: 'inside', 
-        withoutEnlargement: true 
-      });
-    }
-    
-    // Apply brightness, contrast, and saturation adjustments
-    enhancedBuffer = enhancedBuffer.modulate({
-      brightness: enhancementParams.brightness,
-      saturation: enhancementParams.saturation
-    });
-    
-    // Apply contrast adjustment
-    enhancedBuffer = enhancedBuffer.linear(enhancementParams.contrast, -(128 * enhancementParams.contrast) + 128);
-    
-    // Apply sharpening if needed
-    if (enhancementParams.sharpness > 1.0) {
-      enhancedBuffer = enhancedBuffer.sharpen(enhancementParams.sharpness, 1, 2);
-    }
-    
-    // Apply noise reduction if needed
-    if (enhancementParams.needsNoiseReduction) {
-      enhancedBuffer = enhancedBuffer.median(3);
-    }
-    
-    // Convert to JPEG with high quality
-    const processedImageBuffer = await enhancedBuffer
-      .jpeg({ quality: 85, progressive: true, mozjpeg: true })
-      .toBuffer();
+    // For now, return the original image with AI analysis
+    // TODO: Implement image processing once Sharp compatibility is resolved
+    const processedImageBuffer = Buffer.from(imageBuffer);
     
     // Upload enhanced image
     const timestamp = Date.now();

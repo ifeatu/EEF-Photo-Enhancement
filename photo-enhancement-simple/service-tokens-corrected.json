@@ -1,1 +1,0 @@
-{"admin":{"secret":"675d027111dced8b0a6cd3e47beccd91272eef0960bd509f284d3408d61c6471","name":"Admin Service Account","permissions":["admin:read","admin:write","upload:read","upload:write","debug:read"],"createdAt":"2024-01-01T00:00:00.000Z"}}
