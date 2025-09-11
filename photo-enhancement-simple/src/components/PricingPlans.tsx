@@ -63,60 +63,11 @@ const creditPackages = [
   }
 ]
 
-const subscriptionTiers = [
-  {
-    id: 'basic',
-    name: 'Basic Subscription',
-    monthlyCredits: 25,
-    price: 19.99,
-    description: 'Monthly credits for regular users',
-    features: [
-      '25 credits per month',
-      'Rollover unused credits',
-      'High-quality processing',
-      'Email support'
-    ]
-  },
-  {
-    id: 'pro',
-    name: 'Pro Subscription',
-    monthlyCredits: 100,
-    price: 69.99,
-    description: 'Perfect for professionals',
-    popular: true,
-    features: [
-      '100 credits per month',
-      'Rollover unused credits',
-      'Highest quality processing',
-      'Priority support',
-      'Batch processing',
-      'API access'
-    ]
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    monthlyCredits: 500,
-    price: 199.99,
-    description: 'For teams and large organizations',
-    features: [
-      '500 credits per month',
-      'Rollover unused credits',
-      'Highest quality processing',
-      'Dedicated support',
-      'Batch processing',
-      'API access',
-      'Custom integrations',
-      'Team management'
-    ]
-  }
-]
 
 export default function PricingPlans({ currentUser }: PricingPlansProps) {
-  const [planType, setPlanType] = useState<'credits' | 'subscription'>('credits')
   const [loading, setLoading] = useState<string | null>(null)
 
-  const handlePurchase = async (planId: string, type: 'credits' | 'subscription') => {
+  const handlePurchase = async (planId: string) => {
     setLoading(planId)
     
     try {
@@ -127,7 +78,7 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
         },
         body: JSON.stringify({
           planId,
-          type,
+          type: 'credits',
           userId: currentUser.id
         }),
       })
@@ -146,9 +97,8 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
     }
   }
 
-  const PlanCard = ({ plan, type, isPopular = false }: { 
+  const PlanCard = ({ plan, isPopular = false }: { 
     plan: any; 
-    type: 'credits' | 'subscription'; 
     isPopular?: boolean 
   }) => (
     <div className={`relative rounded-2xl border ${isPopular ? 'border-blue-500 ring-2 ring-blue-500' : 'border-gray-200'} bg-white p-8 shadow-sm`}>
@@ -166,17 +116,10 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
         
         <div className="mt-6">
           <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
-          {type === 'subscription' && (
-            <span className="text-gray-600">/month</span>
-          )}
         </div>
         
         <div className="mt-2 text-sm text-gray-600">
-          {type === 'credits' ? (
-            `${plan.credits} credits`
-          ) : (
-            `${plan.monthlyCredits} credits per month`
-          )}
+          {plan.credits} credits
         </div>
       </div>
       
@@ -192,7 +135,7 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
       </ul>
       
       <button
-        onClick={() => handlePurchase(plan.id, type)}
+        onClick={() => handlePurchase(plan.id)}
         disabled={loading === plan.id}
         className={`mt-8 w-full rounded-lg px-4 py-3 text-center text-sm font-semibold transition-colors ${
           isPopular
@@ -212,60 +155,20 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Your Current Status</h2>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-gray-600">Available Credits: <span className="font-semibold text-gray-900">{currentUser.credits}</span></p>
-            {currentUser.subscriptionTier && (
-              <p className="text-gray-600">Subscription: <span className="font-semibold text-gray-900">{currentUser.subscriptionTier}</span></p>
-            )}
+            <p className="text-gray-600">Available Credits: <span className="font-semibold text-gray-900">{currentUser.credits >= 999999 ? 'Unlimited' : currentUser.credits}</span></p>
           </div>
-        </div>
-      </div>
-
-      {/* Plan Type Toggle */}
-      <div className="flex justify-center">
-        <div className="bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setPlanType('credits')}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-              planType === 'credits'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            One-time Credits
-          </button>
-          <button
-            onClick={() => setPlanType('subscription')}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-              planType === 'subscription'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Monthly Subscription
-          </button>
         </div>
       </div>
 
       {/* Plans Grid */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {planType === 'credits'
-          ? creditPackages.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                type="credits"
-                isPopular={plan.popular}
-              />
-            ))
-          : subscriptionTiers.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                type="subscription"
-                isPopular={plan.popular}
-              />
-            ))
-        }
+        {creditPackages.map((plan) => (
+          <PlanCard
+            key={plan.id}
+            plan={plan}
+            isPopular={plan.popular}
+          />
+        ))}
       </div>
 
       {/* FAQ Section */}
@@ -277,16 +180,16 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
             <p className="text-gray-600">Each photo enhancement uses 1 credit. Credits never expire and can be used anytime.</p>
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 mb-2">Can I cancel my subscription?</h3>
-            <p className="text-gray-600">Yes, you can cancel anytime. You&apos;ll keep your remaining credits until they&apos;re used.</p>
+            <h3 className="font-semibold text-gray-900 mb-2">What&apos;s the difference between plans?</h3>
+            <p className="text-gray-600">All plans use the same high-quality AI. Higher tiers get priority support and additional features like batch processing.</p>
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 mb-2">What&apos;s the difference in quality?</h3>
-            <p className="text-gray-600">All plans use the same high-quality AI. Higher tiers get priority processing and additional features.</p>
+            <h3 className="font-semibold text-gray-900 mb-2">Do credits expire?</h3>
+            <p className="text-gray-600">No, purchased credits never expire and can be used anytime.</p>
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 mb-2">Do unused credits roll over?</h3>
-            <p className="text-gray-600">Yes, with subscriptions unused credits roll over to the next month. One-time purchases never expire.</p>
+            <h3 className="font-semibold text-gray-900 mb-2">How long does processing take?</h3>
+            <p className="text-gray-600">Most photos are enhanced within 2-5 seconds. Processing is immediate after upload.</p>
           </div>
         </div>
       </div>

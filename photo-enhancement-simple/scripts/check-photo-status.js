@@ -7,7 +7,7 @@
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
-const PHOTO_ID = 'cmffpnptl00012rfnpw5e471a';
+const PHOTO_ID = 'cmffswthk00012rgwgn3e68fh';
 const PRODUCTION_URL = 'https://photoenhance.dev';
 
 class PhotoStatusChecker {
