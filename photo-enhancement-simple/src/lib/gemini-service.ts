@@ -269,30 +269,91 @@ export class ProductionGeminiService {
   }
   
   /**
-   * Process image without Sharp (serverless compatible)
-   * For now, returns original image with Gemini analysis data
-   * This preserves the core functionality while being serverless-ready
+   * Process image using Gemini 2.0 Flash for actual enhancement
+   * Uses AI to recreate and enhance the photo professionally
    */
   private async processImageServerless(
     imageData: { buffer: Buffer; mimeType: string; size: number },
     analysisData: GeminiAnalysisResult
   ): Promise<Buffer> {
-    // SERVERLESS COMPATIBLE: No Sharp processing
-    // Options for future enhancement:
-    // 1. Use Vercel Image Optimization API
-    // 2. Use cloud image processing service (Cloudinary, ImageKit)
-    // 3. Use Canvas API for basic adjustments
-    // 4. Use WebAssembly image processing library
-    
-    console.log('Processing image (serverless mode)', {
+    console.log('Starting Gemini 2.0 image enhancement', {
       analysisData,
-      willApplyProcessing: false,
-      note: 'Sharp removed for serverless compatibility'
+      originalSize: imageData.size
     });
     
-    // Return original image buffer
-    // The value comes from Gemini AI analysis, not image processing
-    return imageData.buffer;
+    try {
+      // Use Gemini 2.0 Flash for image generation
+      const model = this.genAI.getGenerativeModel({ 
+        model: 'gemini-2.0-flash-exp' // Latest model with image generation
+      });
+      
+      // Enhanced prompt for professional photo recreation
+      const enhancementPrompt = `Subject: An exact recreation of a vintage photograph, but with a total professional makeover. Keep the people, their poses, and the entire scene exactly the same. Your task is to make this look like a high-end portrait taken today.
+
+Aesthetic Transformation:
+
+Make the Colors POP: This is the most important part. Get rid of the old, faded colors and create a modern, vibrant, and deeply saturated look. The colors should be rich, full of life, and bold.
+
+Light the Scene Like a Pro: Forget the harsh flash. Use soft, professional lighting that sculpts the subjects and creates depth. Eliminate all glare on glasses and add a bright sparkle in the eyes.
+
+Ultra-Realistic Detail: Render everything in stunning 8K detail. The skin should look natural, not fake or airbrushed. You should be able to see the texture of their clothes and the patterns on the walls with perfect clarity.
+
+Professional Camera Feel: The final image should have the crisp, clear quality of a modern digital camera with a wide dynamic range.
+
+Keep everything exactly the same - just make it look like it was shot today with professional equipment and lighting.`;
+      
+      // Convert to base64 for Gemini
+      const base64Image = imageData.buffer.toString('base64');
+      
+      // Generate enhanced image
+      const result = await Promise.race([
+        model.generateContent([
+          enhancementPrompt,
+          {
+            inlineData: {
+              data: base64Image,
+              mimeType: imageData.mimeType
+            }
+          }
+        ]),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Image enhancement timeout')), this.config.timeout)
+        )
+      ]) as any;
+      
+      const response = await result.response;
+      
+      // Check if we got an image back
+      const candidates = response.candidates;
+      if (candidates && candidates[0] && candidates[0].content) {
+        const content = candidates[0].content;
+        
+        // Look for image data in the response
+        for (const part of content.parts) {
+          if (part.inlineData && part.inlineData.data) {
+            // We got an enhanced image back
+            const enhancedImageBase64 = part.inlineData.data;
+            const enhancedBuffer = Buffer.from(enhancedImageBase64, 'base64');
+            
+            console.log('Gemini enhanced image successfully', {
+              originalSize: imageData.size,
+              enhancedSize: enhancedBuffer.length
+            });
+            
+            return enhancedBuffer;
+          }
+        }
+      }
+      
+      // If no enhanced image, fallback to analysis-based enhancement message
+      console.warn('Gemini did not return enhanced image, using original with analysis');
+      return imageData.buffer;
+      
+    } catch (error: any) {
+      console.error('Gemini image enhancement failed:', error.message);
+      // Fallback to original image if enhancement fails
+      return imageData.buffer;
+    }
   }
   
   /**

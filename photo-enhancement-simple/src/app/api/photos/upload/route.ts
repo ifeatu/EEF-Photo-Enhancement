@@ -291,27 +291,86 @@ export const POST = withAuth(async (request: NextRequest, user) => {
         addBreadcrumb('Credit deduction skipped for admin user', 'upload', { userId: user.id });
       }
 
-      // Immediately trigger enhancement processing
-      try {
-        // Call the enhance API internally to process the photo immediately
-        const enhanceResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/photos/enhance`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Internal-Service': 'upload-service', // Internal service identifier
-          },
-          body: JSON.stringify({ photoId: photo.id }),
-        });
+      // Immediately trigger enhancement processing with retry logic
+      let enhancementTriggered = false;
+      const maxRetries = 3;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          addBreadcrumb(`Attempting photo enhancement (attempt ${attempt})`, 'upload', { photoId: photo.id });
+          
+          // Call the enhance API internally to process the photo immediately
+          const enhanceResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/photos/enhance`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Internal-Service': 'upload-service', // Internal service identifier
+              'X-User-Id': user.id // Required for internal service authentication
+            },
+            body: JSON.stringify({ 
+              photoId: photo.id,
+              originalUrl: imageUrl
+            }),
+          });
 
-        if (enhanceResponse.ok) {
-          message = 'Photo uploaded and enhancement completed successfully';
-        } else {
-          console.warn('Enhancement failed:', await enhanceResponse.text());
-          message = 'Photo uploaded but enhancement failed - will retry later';
+          if (enhanceResponse.ok) {
+            const enhanceResult = await enhanceResponse.json();
+            message = 'Photo uploaded and enhancement completed successfully';
+            enhancementTriggered = true;
+            addBreadcrumb('Photo enhancement completed', 'upload', { 
+              photoId: photo.id, 
+              attempt,
+              enhancedUrl: enhanceResult.data?.enhancedUrl 
+            });
+            break;
+          } else {
+            const errorText = await enhanceResponse.text();
+            console.warn(`Enhancement failed (attempt ${attempt}):`, errorText);
+            addBreadcrumb(`Enhancement failed (attempt ${attempt})`, 'upload', { 
+              photoId: photo.id, 
+              error: errorText 
+            });
+            
+            if (attempt === maxRetries) {
+              message = 'Photo uploaded but enhancement failed - will retry automatically';
+            } else {
+              // Brief delay before retry
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            }
+          }
+        } catch (enhanceError: any) {
+          console.warn(`Failed to trigger photo enhancement (attempt ${attempt}):`, enhanceError);
+          addBreadcrumb(`Enhancement error (attempt ${attempt})`, 'upload', { 
+            photoId: photo.id, 
+            error: enhanceError.message 
+          });
+          
+          if (attempt === maxRetries) {
+            message = 'Photo uploaded but enhancement failed - will retry automatically';
+          } else {
+            // Brief delay before retry
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
         }
-      } catch (enhanceError) {
-        console.warn('Failed to trigger photo enhancement:', enhanceError);
-        message = 'Photo uploaded but enhancement failed - will retry later';
+      }
+      
+      if (!enhancementTriggered) {
+        // Log the failure for monitoring
+        logger.warn('Photo enhancement failed after all retries', {
+          photoId: photo.id,
+          userId: user.id,
+          maxRetries,
+          correlationId
+        });
+        
+        // Log alert for stuck photo monitoring
+        logger.error('Stuck photo detected - enhancement failed after retries', {
+          photoId: photo.id,
+          userId: user.id,
+          attemptedAt: new Date().toISOString(),
+          correlationId,
+          alertType: 'stuck_photo_detected'
+        });
       }
     } else {
       // No credits available - photo uploaded but not processed
