@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "cd photo-enhancement-simple && npm start",
-    "build": "cd photo-enhancement-simple && npm run build",
+    "build": "cd photo-enhancement-simple && npm install && npm run build",
     "dev": "concurrently \"cd photo-enhancement-simple && npm run dev\""
   },
   "dependencies": {
