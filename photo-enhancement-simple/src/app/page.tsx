@@ -5,6 +5,7 @@ import type { Session } from "next-auth";
 
 export default async function Home() {
   const session = await getServerSession(authOptions) as Session | null;
+  // Force deployment refresh - Get Started buttons should point to /register
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">{/* Navigation is now handled by SessionWrapper */}
