@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { put } from '@vercel/blob';
-import { withAuth } from '@/lib/api-auth';
-import { createSuccessResponse, createErrorResponse } from '@/lib/api-response';
+import type { Session } from 'next-auth';
 
 // Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
@@ -17,102 +18,119 @@ export async function OPTIONS(request: NextRequest) {
   });
 }
 
-// Simplified file validation
-function validateImageFile(file: File) {
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  
-  if (!allowedTypes.includes(file.type)) {
-    return { valid: false, error: 'Invalid file type. Please upload JPEG, PNG, or WebP images.' };
-  }
-  
-  if (file.size > maxSize) {
-    return { valid: false, error: 'File too large. Maximum size is 10MB.' };
-  }
-  
-  return { valid: true };
-}
-
-export const POST = withAuth(async (request: NextRequest, user) => {
-  const startTime = Date.now();
-  const correlationId = `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  
+export async function POST(request: NextRequest) {
   try {
-    console.log('Upload request started', { userId: user.id, correlationId });
+    console.log('Upload request started - minimal version');
 
-    // Check user credits and role
-    const userCredits = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { credits: true, role: true }
+    // Step 1: Check authentication
+    const session = await getServerSession(authOptions) as Session | null;
+    
+    if (!session?.user?.id) {
+      console.log('No session found');
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    console.log('Session found:', session.user.id);
+
+    // Step 2: Get user data
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, email: true, credits: true, role: true }
     });
 
-    if (!userCredits) {
-      return createErrorResponse('User not found', 404);
+    if (!user) {
+      console.log('User not found in database');
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Admin users with unlimited credits always have credits
-    const isAdminWithUnlimitedCredits = userCredits.role === 'ADMIN' && userCredits.credits >= 999999;
-    const hasCredits = isAdminWithUnlimitedCredits || userCredits.credits >= 1;
+    console.log('User found:', user.email, 'Credits:', user.credits);
+
+    // Step 3: Check credits
+    const isAdminWithUnlimitedCredits = user.role === 'ADMIN' && user.credits >= 999999;
+    const hasCredits = isAdminWithUnlimitedCredits || user.credits >= 1;
     
     if (!hasCredits) {
-      console.log('Upload failed: insufficient credits', { userId: user.id, credits: userCredits.credits });
-      return createErrorResponse('Insufficient credits. Please purchase more credits to continue.', 402);
+      console.log('Insufficient credits');
+      return NextResponse.json({ 
+        error: 'Insufficient credits',
+        credits: user.credits 
+      }, { status: 402 });
     }
 
-    // Extract file from form data
-    const formData = await request.formData();
+    // Step 4: Get file from form data
+    let formData;
+    try {
+      formData = await request.formData();
+      console.log('Form data parsed successfully');
+    } catch (formError: any) {
+      console.error('Form data parsing failed:', formError.message);
+      return NextResponse.json({ 
+        error: 'Invalid form data',
+        details: formError.message
+      }, { status: 400 });
+    }
+
     const file = formData.get('photo') as File;
     
     if (!file) {
-      return createErrorResponse('No file provided', 400);
+      console.log('No file in form data');
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    console.log('File received', { 
-      userId: user.id, 
-      fileName: file.name, 
-      fileSize: file.size, 
-      fileType: file.type 
+    console.log('File received:', {
+      name: file.name,
+      size: file.size,
+      type: file.type
     });
 
-    // Validate file
-    const validation = validateImageFile(file);
-    if (!validation.valid) {
-      return createErrorResponse(validation.error || 'Invalid file', 400);
+    // Step 5: Basic file validation
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    
+    if (!allowedTypes.includes(file.type)) {
+      console.log('Invalid file type:', file.type);
+      return NextResponse.json({ 
+        error: 'Invalid file type. Please upload JPEG, PNG, or WebP images.' 
+      }, { status: 400 });
+    }
+    
+    if (file.size > maxSize) {
+      console.log('File too large:', file.size);
+      return NextResponse.json({ 
+        error: 'File too large. Maximum size is 10MB.' 
+      }, { status: 400 });
     }
 
+    // Step 6: Upload to Vercel Blob
     let imageUrl: string;
     
-    // Check if Vercel Blob token is available
-    if (process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_READ_WRITE_TOKEN.includes('YOUR_TOKEN_HERE')) {
-      console.log('Uploading to Vercel Blob', { fileName: file.name });
-      
-      try {
-        const blob = await put(file.name, file, {
-          access: 'public',
-        });
-        imageUrl = blob.url;
-        console.log('Blob upload successful', { blobUrl: blob.url });
-      } catch (blobError: any) {
-        console.error('Vercel Blob upload failed:', blobError);
-        return NextResponse.json({ 
-          error: 'File upload service unavailable',
-          message: 'Unable to upload file to storage service',
-          details: process.env.NODE_ENV === 'development' ? blobError.message : undefined
-        }, { status: 502 });
-      }
-    } else {
+    if (!process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN.includes('YOUR_TOKEN_HERE')) {
       console.error('Blob storage not configured');
       return NextResponse.json({ 
         error: 'File storage service not configured',
-        message: 'Please configure BLOB_READ_WRITE_TOKEN for file uploads'
+        message: 'BLOB_READ_WRITE_TOKEN not set'
       }, { status: 503 });
     }
 
-    // Create photo record in database
-    console.log('Creating photo record', { imageUrl });
-    
+    try {
+      console.log('Uploading to Vercel Blob...');
+      const blob = await put(file.name, file, {
+        access: 'public',
+      });
+      imageUrl = blob.url;
+      console.log('Blob upload successful:', blob.url);
+    } catch (blobError: any) {
+      console.error('Blob upload failed:', blobError.message);
+      return NextResponse.json({ 
+        error: 'File upload failed',
+        message: blobError.message
+      }, { status: 502 });
+    }
+
+    // Step 7: Create photo record
     let photo;
     try {
+      console.log('Creating photo record...');
       photo = await prisma.photo.create({
         data: {
           userId: user.id,
@@ -122,130 +140,52 @@ export const POST = withAuth(async (request: NextRequest, user) => {
           description: formData.get('description') as string || null,
         },
       });
-      console.log('Photo record created', { photoId: photo.id });
+      console.log('Photo record created:', photo.id);
     } catch (dbError: any) {
-      console.error('Database error creating photo record:', dbError);
+      console.error('Database error:', dbError.message);
       return NextResponse.json({
         error: 'Database error',
-        message: 'Unable to save photo information',
-        details: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+        message: dbError.message
       }, { status: 503 });
     }
 
-    let message = 'Photo uploaded successfully';
-
-    // Deduct credit (skip for admin users with unlimited credits)
+    // Step 8: Deduct credit (skip for admin users with unlimited credits)
     if (!isAdminWithUnlimitedCredits) {
-      console.log('Deducting user credit', { userId: user.id });
       try {
+        console.log('Deducting credit...');
         await prisma.user.update({
           where: { id: user.id },
           data: { credits: { decrement: 1 } },
         });
+        console.log('Credit deducted successfully');
       } catch (creditError: any) {
-        console.error('Failed to deduct user credit:', creditError);
-        console.warn('Photo uploaded but credit deduction failed');
+        console.error('Credit deduction failed:', creditError.message);
+        // Continue without failing the upload
       }
     }
 
-    // Immediately trigger enhancement processing with retry logic
-    let enhancementTriggered = false;
-    const maxRetries = 3;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`Attempting photo enhancement (attempt ${attempt})`, { photoId: photo.id });
-        
-        const enhanceResponse = await fetch(`${process.env.NEXTAUTH_URL || 'https://photoenhance.dev'}/api/photos/enhance`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Internal-Service': 'upload-service',
-            'X-User-Id': user.id
-          },
-          body: JSON.stringify({ 
-            photoId: photo.id,
-            originalUrl: imageUrl
-          }),
-        });
+    console.log('Upload completed successfully');
 
-        if (enhanceResponse.ok) {
-          const enhanceResult = await enhanceResponse.json();
-          message = 'Photo uploaded and enhancement completed successfully';
-          enhancementTriggered = true;
-          console.log('Photo enhancement completed', { 
-            photoId: photo.id, 
-            attempt,
-            enhancedUrl: enhanceResult.data?.enhancedUrl 
-          });
-          break;
-        } else {
-          const errorText = await enhanceResponse.text();
-          console.warn(`Enhancement failed (attempt ${attempt}):`, errorText);
-          
-          if (attempt === maxRetries) {
-            message = 'Photo uploaded but enhancement failed - will retry automatically';
-          } else {
-            // Brief delay before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          }
-        }
-      } catch (enhanceError: any) {
-        console.warn(`Failed to trigger photo enhancement (attempt ${attempt}):`, enhanceError);
-        
-        if (attempt === maxRetries) {
-          message = 'Photo uploaded but enhancement failed - will retry automatically';
-        } else {
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        }
-      }
-    }
-    
-    if (!enhancementTriggered) {
-      console.warn('Photo enhancement failed after all retries', {
+    return NextResponse.json({ 
+      success: true,
+      data: {
         photoId: photo.id,
-        userId: user.id,
-        maxRetries,
-        correlationId
-      });
-    }
-
-    const processingTime = Date.now() - startTime;
-    console.log('Upload completed', { 
-      photoId: photo.id, 
-      processingTime,
-      enhancementTriggered 
-    });
-
-    return createSuccessResponse({ 
-      photoId: photo.id,
-      message,
-      creditsRemaining: isAdminWithUnlimitedCredits ? 999999 : Math.max(0, userCredits.credits - 1),
-      upgradeUrl: '/pricing'
+        message: 'Photo uploaded successfully',
+        creditsRemaining: isAdminWithUnlimitedCredits ? 999999 : Math.max(0, user.credits - 1),
+      }
     });
 
   } catch (error: any) {
-    const processingTime = Date.now() - startTime;
-    
-    console.error('Photo upload error:', {
+    console.error('Upload error (caught at top level):', {
       message: error.message,
-      correlationId,
-      processingTime,
-      userId: user.id,
-      stack: error.stack
+      stack: error.stack,
+      name: error.name
     });
     
-    const errorMessage = process.env.NODE_ENV === 'development' 
-      ? `Upload failed: ${error.message}` 
-      : 'Upload failed';
-      
-    return createErrorResponse({
-      message: errorMessage,
-      correlationId,
-      ...(process.env.NODE_ENV === 'development' && { 
-        details: error.message,
-        code: error.code 
-      })
-    }, 500);
+    return NextResponse.json({
+      error: 'Upload failed',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
-})
+}
