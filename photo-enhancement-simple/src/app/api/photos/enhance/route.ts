@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/api-auth';
-// Dynamic import for Deep-Image.ai
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { put } from '@vercel/blob';
 import type { Session } from 'next-auth';
@@ -39,7 +38,7 @@ export async function OPTIONS(request: NextRequest) {
   });
 }
 
-// Initialize Gemini AI with Nano Banana model (dynamic import for Vercel compatibility)
+// Initialize Gemini AI (dynamic import for Vercel compatibility)
 async function getGeminiModel() {
   if (!process.env.GOOGLE_AI_API_KEY) {
     throw new Error('GOOGLE_AI_API_KEY environment variable is required');
