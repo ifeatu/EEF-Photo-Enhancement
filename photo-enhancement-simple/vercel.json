@@ -3,6 +3,16 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "npm install",
+  "functions": {
+    "src/app/api/photos/enhance/route.ts": {
+      "maxDuration": 60
+    }
+  },
+  "build": {
+    "env": {
+      "SHARP_IGNORE_GLOBAL_LIBVIPS": "1"
+    }
+  },
   "headers": [
     {
       "source": "/api/(.*)",
