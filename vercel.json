@@ -2,16 +2,5 @@
   "buildCommand": "npm run build",
   "outputDirectory": "photo-enhancement-simple/.next",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "functions": {
-    "photo-enhancement-simple/src/app/api/photos/enhance/route.ts": {
-      "maxDuration": 60
-    },
-    "photo-enhancement-simple/src/app/api/photos/upload/route.ts": {
-      "maxDuration": 30
-    },
-    "photo-enhancement-simple/src/app/api/auth/register/route.ts": {
-      "maxDuration": 30
-    }
-  }
+  "framework": "nextjs"
 }
