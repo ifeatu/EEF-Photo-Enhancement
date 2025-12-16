@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   // CORS headers removed - now handled centrally in API routes via lib/cors.ts
   // This eliminates CORS configuration conflicts identified in debugging journey
   images: {

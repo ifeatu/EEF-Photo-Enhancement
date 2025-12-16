@@ -24,10 +24,13 @@ const creditPackages = [
     price: 9.99,
     description: 'Perfect for trying out our AI enhancement',
     features: [
-      '10 photo enhancements',
       'High-quality AI processing',
       'Download enhanced photos',
-      'Basic support'
+      'Priority support',
+      'Batch processing',
+      'Instant processing',
+      'No expiration',
+      'Full resolution output'
     ]
   },
   {
@@ -38,11 +41,13 @@ const creditPackages = [
     description: 'Great value for regular users',
     popular: true,
     features: [
-      '50 photo enhancements',
       'High-quality AI processing',
       'Download enhanced photos',
       'Priority support',
-      'Batch processing'
+      'Batch processing',
+      'Instant processing',
+      'No expiration',
+      'Full resolution output'
     ]
   },
   {
@@ -52,13 +57,13 @@ const creditPackages = [
     price: 149.99,
     description: 'For photographers and businesses',
     features: [
-      '200 photo enhancements',
-      'Highest quality AI processing',
+      'High-quality AI processing',
       'Download enhanced photos',
-      'Premium support',
+      'Priority support',
       'Batch processing',
-      'API access',
-      'Custom presets'
+      'Instant processing',
+      'No expiration',
+      'Full resolution output'
     ]
   }
 ]
@@ -114,12 +119,18 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
         <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
         <p className="mt-2 text-gray-600">{plan.description}</p>
         
-        <div className="mt-6">
-          <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
+        {/* Emphasize Credits */}
+        <div className="mt-6 bg-gray-50 rounded-lg p-4">
+          <div className="text-3xl font-bold text-blue-600 mb-1">
+            {plan.credits} Credits
+          </div>
+          <div className="text-sm text-gray-600">
+            ${(plan.price / plan.credits).toFixed(2)} per enhancement
+          </div>
         </div>
         
-        <div className="mt-2 text-sm text-gray-600">
-          {plan.credits} credits
+        <div className="mt-4">
+          <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
         </div>
       </div>
       
@@ -160,6 +171,30 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
         </div>
       </div>
 
+      {/* Value Proposition */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">All Plans Include Premium Features</h2>
+          <p className="text-gray-600 mb-4">Every plan gives you the same high-quality AI enhancement technology. Choose based on how many photos you want to enhance.</p>
+          <div className="grid grid-cols-3 gap-4 text-center text-sm">
+            <div>
+              <div className="font-semibold text-gray-900">Starter Pack</div>
+              <div className="text-blue-600 font-bold">${(9.99/10).toFixed(2)} per photo</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">Popular Pack</div>
+              <div className="text-green-600 font-bold">${(39.99/50).toFixed(2)} per photo</div>
+              <div className="text-xs text-green-600">Save 20%</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">Professional Pack</div>
+              <div className="text-purple-600 font-bold">${(149.99/200).toFixed(2)} per photo</div>
+              <div className="text-xs text-purple-600">Save 25%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Plans Grid */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {creditPackages.map((plan) => (
@@ -181,7 +216,7 @@ export default function PricingPlans({ currentUser }: PricingPlansProps) {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 mb-2">What&apos;s the difference between plans?</h3>
-            <p className="text-gray-600">All plans use the same high-quality AI. Higher tiers get priority support and additional features like batch processing.</p>
+            <p className="text-gray-600">All plans include the same premium features and AI quality. The only difference is the number of credits you receive - larger packs offer better value per enhancement.</p>
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 mb-2">Do credits expire?</h3>

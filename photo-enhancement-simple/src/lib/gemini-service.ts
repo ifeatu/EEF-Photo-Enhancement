@@ -138,9 +138,9 @@ export class ProductionGeminiService {
           mimeType: imageData.mimeType
         });
         
-        // Initialize Gemini model
+        // Initialize Gemini model for analysis (use text model for analysis)
         const model = this.genAI.getGenerativeModel({ 
-          model: this.config.model 
+          model: 'gemini-2.0-flash-exp' // Use text model for analysis
         });
         
         // Prepare analysis prompt
@@ -269,22 +269,22 @@ export class ProductionGeminiService {
   }
   
   /**
-   * Process image using Gemini 2.0 Flash for actual enhancement
-   * Uses AI to recreate and enhance the photo professionally
+   * Process image using Gemini 2.5 Flash Image (Nano Banana) for actual enhancement
+   * Uses Google's state-of-the-art image editing model for professional photo enhancement
    */
   private async processImageServerless(
     imageData: { buffer: Buffer; mimeType: string; size: number },
     analysisData: GeminiAnalysisResult
   ): Promise<Buffer> {
-    console.log('Starting Gemini 2.0 image enhancement', {
+    console.log('Starting Nano Banana (Gemini 2.5 Flash Image) enhancement', {
       analysisData,
       originalSize: imageData.size
     });
     
     try {
-      // Use Gemini 2.0 Flash for image generation
+      // Use Gemini 2.5 Flash Image (Nano Banana) for image generation and editing
       const model = this.genAI.getGenerativeModel({ 
-        model: 'gemini-2.0-flash-exp' // Latest model with image generation
+        model: 'gemini-2.5-flash-image-preview' // Nano Banana - the image editing model
       });
       
       // Enhanced prompt for professional photo recreation
@@ -397,9 +397,10 @@ Keep everything exactly the same - just make it look like it was shot today with
     try {
       return {
         healthy: Boolean(APP_CONFIG.GOOGLE_AI_API_KEY),
-        version: '2.0.0-serverless',
+        version: '2.5.0-nano-banana',
         config: {
-          model: this.config.model,
+          analysisModel: 'gemini-2.0-flash-exp',
+          imageModel: 'gemini-2.5-flash-image-preview', // Nano Banana
           timeout: this.config.timeout,
           maxRetries: this.config.maxRetries,
           sharpEnabled: false // Explicitly disabled for serverless
@@ -408,7 +409,7 @@ Keep everything exactly the same - just make it look like it was shot today with
     } catch (error) {
       return {
         healthy: false,
-        version: '2.0.0-serverless',
+        version: '2.5.0-nano-banana',
         config: {}
       };
     }

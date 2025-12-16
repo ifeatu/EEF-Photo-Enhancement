@@ -121,7 +121,7 @@ export function getLogLevel(): 'error' | 'warn' | 'info' | 'debug' {
  */
 export function getGeminiConfig() {
   return {
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-flash-image-preview', // Nano Banana - the image editing model
     timeout: APP_CONFIG.SERVERLESS_TIMEOUTS.GEMINI_API,
     maxRetries: APP_CONFIG.RETRY_CONFIG.MAX_RETRIES
   };

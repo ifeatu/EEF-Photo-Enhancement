@@ -4,11 +4,16 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
+interface AdminNavLinkProps {
+  mobile?: boolean;
+  onClose?: () => void;
+}
+
 /**
  * Client-side admin navigation link component
  * Only renders the admin link if the user has admin role
  */
-export default function AdminNavLink() {
+export default function AdminNavLink({ mobile = false, onClose }: AdminNavLinkProps = {}) {
   const { data: session } = useSession();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -48,7 +53,11 @@ export default function AdminNavLink() {
   return (
     <Link
       href="/admin"
-      className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+      className={mobile 
+        ? "text-gray-700 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium" 
+        : "text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+      }
+      onClick={mobile ? onClose : undefined}
     >
       Admin
     </Link>

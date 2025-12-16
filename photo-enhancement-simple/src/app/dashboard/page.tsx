@@ -9,6 +9,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import SmartUploadHandler from '@/components/SmartUploadHandler';
 
 interface UserData {
   id: string;
@@ -33,89 +34,51 @@ export default function Dashboard() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
   const [uploadResults, setUploadResults] = useState<{needsUpgrade: boolean, message: string, upgradeUrl?: string}[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length > 0) {
-      setSelectedFiles(files.filter(file => file.type.startsWith('image/')));
-    }
-  };
-
-  const handleDragOver = (event: React.DragEvent) => {
-    event.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (event: React.DragEvent) => {
-    event.preventDefault();
-    setDragOver(false);
-  };
-
-  const handleDrop = (event: React.DragEvent) => {
-    event.preventDefault();
-    setDragOver(false);
-    const files = Array.from(event.dataTransfer.files);
-    if (files.length > 0) {
-      setSelectedFiles(files.filter(file => file.type.startsWith('image/')));
-    }
-  };
-
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0) return;
+  // Status polling for async processing
+  const pollPhotoStatus = async (photoId: string, fileName: string) => {
+    console.log(`🔄 Starting status polling for ${fileName}`);
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes max
     
-    setUploading(true);
-    const results: {needsUpgrade: boolean, message: string, upgradeUrl?: string}[] = [];
-    
-    try {
-      // Upload files one by one
-      for (const file of selectedFiles) {
-        const formData = new FormData();
-        formData.append('photo', file);
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/photos/status?photoId=${photoId}`);
+        const result = await response.json();
         
-        const response = await fetch('/api/photos/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          results.push({
-            needsUpgrade: result.needsUpgrade,
-            message: result.message,
-            upgradeUrl: result.upgradeUrl
-          });
-        } else {
-          const errorData = await response.json();
-          results.push({
-            needsUpgrade: false,
-            message: `Upload failed for ${file.name}: ${errorData.error}`
-          });
+        if (result.success) {
+          const { status, isComplete } = result.data;
+          
+          console.log(`📊 ${fileName} status: ${status}`);
+          
+          if (isComplete) {
+            console.log(`✅ ${fileName} processing complete: ${status}`);
+            // Refresh photos list
+            await fetchPhotos();
+            return;
+          }
+          
+          // Continue polling if not complete
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(poll, 5000); // Poll every 5 seconds
+          } else {
+            console.log(`⏱️ ${fileName} polling timeout after ${maxAttempts} attempts`);
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Status polling error for ${fileName}:`, error);
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 10000); // Retry in 10 seconds on error
         }
       }
-      
-      setUploadResults(results);
-      
-      // Refresh user data and photos
-      fetchUserData();
-      fetchPhotos();
-      setSelectedFiles([]);
-      
-      // Show results summary
-      const needsUpgradeCount = results.filter(r => r.needsUpgrade).length;
-      if (needsUpgradeCount > 0) {
-        // Will show upgrade notification in UI
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Failed to upload photos. Please try again.');
-    } finally {
-      setUploading(false);
-    }
+    };
+    
+    // Start polling after a short delay
+    setTimeout(poll, 2000);
   };
 
   useEffect(() => {
@@ -169,46 +132,57 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-2 text-gray-600">Welcome back, {session.user?.name || session.user?.email}</p>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
+            Welcome back, {session.user?.name || session.user?.email}
+          </p>
         </div>
 
-        {/* User Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900">Credits Remaining</h3>
-            <p className="text-3xl font-bold text-blue-600 mt-2">{userData?.credits || 0}</p>
+        {/* User Stats - Mobile Optimized */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h3 className="text-sm sm:text-lg font-medium text-gray-900">Credits Remaining</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-blue-600 mt-1 sm:mt-2">
+              {userData?.credits || 0}
+              {userData?.role === 'ADMIN' && userData?.credits >= 999999 && (
+                <span className="text-sm font-normal text-gray-500 block">Unlimited</span>
+              )}
+            </p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900">Photos Enhanced</h3>
-            <p className="text-3xl font-bold text-green-600 mt-2">{Array.isArray(photos) ? photos.filter(p => p.status === 'completed').length : 0}</p>
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h3 className="text-sm sm:text-lg font-medium text-gray-900">Photos Enhanced</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-green-600 mt-1 sm:mt-2">
+              {Array.isArray(photos) ? photos.filter(p => p.status === 'completed').length : 0}
+            </p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900">Account Type</h3>
-            <p className="text-lg font-medium text-purple-600 mt-2 capitalize">{userData?.role?.toLowerCase() || 'User'}</p>
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow sm:col-span-2 lg:col-span-1">
+            <h3 className="text-sm sm:text-lg font-medium text-gray-900">Account Type</h3>
+            <p className="text-lg sm:text-xl font-medium text-purple-600 mt-1 sm:mt-2 capitalize">
+              {userData?.role?.toLowerCase() || 'User'}
+            </p>
           </div>
         </div>
 
-        {/* Upload Results Notification */}
+        {/* Upload Results Notification - Mobile Optimized */}
         {uploadResults.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h3 className="text-lg font-semibold mb-4">Upload Results</h3>
-            <div className="space-y-2">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Upload Results</h3>
+            <div className="space-y-2 sm:space-y-3">
               {uploadResults.map((result, index) => (
                 <div key={index} className={`p-3 rounded-lg ${
                   result.needsUpgrade ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'
                 }`}>
-                  <p className={`text-sm ${
+                  <p className={`text-xs sm:text-sm ${
                     result.needsUpgrade ? 'text-yellow-800' : 'text-green-800'
                   }`}>{result.message}</p>
                   {result.needsUpgrade && result.upgradeUrl && (
                     <div className="mt-2">
                       <a 
                         href={result.upgradeUrl}
-                        className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
+                        className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors font-medium"
                       >
                         Upgrade to Add More Credits
                       </a>
@@ -219,100 +193,96 @@ export default function Dashboard() {
             </div>
             <button 
               onClick={() => setUploadResults([])}
-              className="mt-4 text-sm text-gray-500 hover:text-gray-700"
+              className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-500 hover:text-gray-700"
             >
               Dismiss
             </button>
           </div>
         )}
 
-        {/* Photo Enhancement Section */}
-        <div className="bg-white rounded-lg shadow mb-8">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Enhance New Photo</h2>
-          </div>
-          <div className="p-6">
-            <div 
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-                dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {selectedFiles.length > 0 ? (
-                <div className="mt-4">
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-900 mb-2">Selected {selectedFiles.length} file(s):</p>
-                    <div className="max-h-32 overflow-y-auto">
-                      {selectedFiles.map((file, index) => (
-                        <div key={index} className="text-xs text-gray-500">
-                          {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="mt-4 flex gap-2 justify-center">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleUpload(); }}
-                      disabled={uploading || !userData?.credits}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {uploading ? 'Uploading...' : `Enhance ${selectedFiles.length} Photo${selectedFiles.length > 1 ? 's' : ''}`}
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setSelectedFiles([]); }}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
-                    >
-                      Remove All
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="mt-2 text-sm text-gray-600">
-                    {dragOver ? 'Drop your photo here' : 'Drag & drop a photo here, or click to browse'}
-                  </p>
-                  <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                    Choose File
-                  </button>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </div>
-            {!userData?.credits && (
-              <p className="mt-2 text-sm text-red-600">You need credits to enhance photos. <a href="/pricing" className="underline">Purchase credits</a></p>
-            )}
-          </div>
-        </div>
+        {/* Photo Enhancement Section - Using Smart Upload Handler */}
+        <SmartUploadHandler
+          userData={userData}
+          onUpload={async (files: File[]) => {
+            setUploading(true);
+            const results: {needsUpgrade: boolean, message: string, upgradeUrl?: string}[] = [];
+            
+            try {
+              for (const file of files) {
+                const formData = new FormData();
+                formData.append('photo', file);
+                formData.append('title', file.name);
+                
+                console.log(`🚀 Starting upload for ${file.name}`);
+                
+                const response = await fetch('/api/photos/upload', {
+                  method: 'POST',
+                  body: formData,
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  console.log('✅ Upload response:', result);
+                  
+                  if (result.success) {
+                    results.push({
+                      needsUpgrade: false,
+                      message: `${file.name} uploaded successfully - processing started`
+                    });
+                    
+                    // Start polling for processing status (non-blocking)
+                    pollPhotoStatus(result.data.photoId, file.name);
+                  } else {
+                    results.push({
+                      needsUpgrade: false,
+                      message: `Upload failed for ${file.name}: ${result.message}`
+                    });
+                  }
+                } else {
+                  const errorData = await response.json();
+                  console.error('❌ Upload error:', errorData);
+                  results.push({
+                    needsUpgrade: errorData.error === 'Insufficient credits',
+                    message: `Upload failed for ${file.name}: ${errorData.error}`,
+                    upgradeUrl: errorData.error === 'Insufficient credits' ? '/pricing' : undefined
+                  });
+                }
+              }
+              
+              setUploadResults(results);
+              
+              // Refresh user data and photos
+              fetchUserData();
+              fetchPhotos();
+            } catch (error) {
+              console.error('Upload error:', error);
+              alert('Failed to upload photos. Please try again.');
+            } finally {
+              setUploading(false);
+            }
+          }}
+          uploading={uploading}
+          maxSimultaneousUploads={10}
+        />
 
-        {/* Recent Photos */}
+        {/* Recent Photos - Mobile Optimized */}
         <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Photos</h2>
+          <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Recent Photos</h2>
             <Link
               href="/gallery"
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium text-center sm:text-right"
             >
               View All Enhanced Photos →
             </Link>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {photos.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No photos yet. Upload your first photo to get started!</p>
+              <p className="text-gray-500 text-center py-8 text-sm sm:text-base">
+                No photos yet. Upload your first photo to get started!
+              </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {photos.slice(0, 6).map((photo) => (
                   <Link key={photo.id} href={`/photos/${photo.id}`} className="block">
                     <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
@@ -320,11 +290,11 @@ export default function Dashboard() {
                         <img 
                           src={photo.originalUrl} 
                           alt="Original photo" 
-                          className="w-full h-48 object-contain bg-gray-50"
+                          className="w-full h-36 sm:h-48 object-contain bg-gray-50"
                         />
                       </div>
-                      <div className="p-4">
-                        <div className="flex justify-between items-center">
+                      <div className="p-3 sm:p-4">
+                        <div className="flex justify-between items-center mb-3">
                           <span className={`px-2 py-1 text-xs rounded-full ${
                             photo.status === 'completed' ? 'bg-green-100 text-green-800' :
                             photo.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
@@ -336,10 +306,10 @@ export default function Dashboard() {
                             {new Date(photo.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        <div className="mt-2 flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           {photo.status === 'pending' && (
                             <button
-                              className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                              className="w-full sm:flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                               onClick={async (e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -362,8 +332,12 @@ export default function Dashboard() {
                             </button>
                           )}
                           <button
-                            className={`${photo.status === 'pending' ? 'flex-1' : 'w-full'} px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors`}
-                            onClick={() => router.push(`/photos/${photo.id}`)}
+                            className={`${photo.status === 'pending' ? 'w-full sm:flex-1' : 'w-full'} px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              router.push(`/photos/${photo.id}`);
+                            }}
                           >
                             {photo.status === 'completed' ? 'View Enhanced' : 'View Progress'}
                           </button>

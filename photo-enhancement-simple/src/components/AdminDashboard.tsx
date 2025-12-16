@@ -93,8 +93,10 @@ export default function AdminDashboard({ users, photos, transactions, stats }: A
   )
 
   // Analytics calculations
-  const totalCreditsUsed = users.reduce((sum, user) => sum + (3 - user.credits), 0) // Assuming 3 starting credits
-  const averageCreditsPerUser = users.length > 0 ? (users.reduce((sum, user) => sum + user.credits, 0) / users.length).toFixed(1) : 0
+  const totalCreditsPurchased = transactions
+    .filter(t => t.status === 'COMPLETED')
+    .reduce((sum, t) => sum + t.creditsPurchased, 0)
+  const averageCreditsPurchasedPerUser = users.length > 0 ? (totalCreditsPurchased / users.length).toFixed(1) : '0.0'
   const monthlyRevenue = transactions
     .filter(t => new Date(t.createdAt).getMonth() === new Date().getMonth())
     .reduce((sum, t) => sum + t.amountPaid, 0)
@@ -156,9 +158,9 @@ export default function AdminDashboard({ users, photos, transactions, stats }: A
           subtitle={`${stats.totalTransactions} transactions`}
         />
         <StatCard 
-          title="Avg Credits/User" 
-          value={averageCreditsPerUser}
-          subtitle="Current average"
+          title="Avg Purchased/User" 
+          value={averageCreditsPurchasedPerUser}
+          subtitle="Credits purchased per user"
         />
       </div>
 
